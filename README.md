@@ -3,19 +3,14 @@
 AI-powered browser automation using Claude's Computer Use API. Describe a task in plain language and CopyCat will see your screen and do it — clicking, typing, scrolling, and filling out forms automatically.
 
 <p align="center">
-  <a href="https://www.tella.tv/video/vid_cmmpahvry017r04juh828flmp">
-    <img src="https://www.tella.tv/video/vid_cmmpahvry017r04juh828flmp/thumbnail" alt="CopyCat Demo" width="600" />
-    <br>
-    <strong>Watch Demo</strong>
-  </a>
+  <img src="demo.gif" alt="CopyCat Demo — auto-filling a form" width="700" />
 </p>
 
-<details>
-<summary>Embed (click to expand)</summary>
-
-<iframe style="border:0;" width="800" height="450" src="https://www.tella.tv/video/vid_cmmpahvry017r04juh828flmp/embed?b=1&title=0&a=1&loop=0&autoPlay=true&t=0&muted=1&wt=0&o=0" allowfullscreen allowtransparency></iframe>
-
-</details>
+<p align="center">
+  <a href="https://www.tella.tv/video/vid_cmmpahvry017r04juh828flmp">
+    <img src="https://img.shields.io/badge/▶_Watch_Full_Demo-d4a574?style=for-the-badge" alt="Watch Full Demo" />
+  </a>
+</p>
 
 ## Getting Started
 
