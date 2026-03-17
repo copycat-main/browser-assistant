@@ -73,6 +73,48 @@ export interface AnthropicError {
   };
 }
 
+// SSE stream event types
+export interface StreamEventMessageStart {
+  type: 'message_start';
+  message: { id: string; model: string; role: string };
+}
+
+export interface StreamEventContentBlockStart {
+  type: 'content_block_start';
+  index: number;
+  content_block: { type: string; text?: string };
+}
+
+export interface StreamEventContentBlockDelta {
+  type: 'content_block_delta';
+  index: number;
+  delta: { type: 'text_delta'; text: string } | { type: 'input_json_delta'; partial_json: string };
+}
+
+export interface StreamEventContentBlockStop {
+  type: 'content_block_stop';
+  index: number;
+}
+
+export interface StreamEventMessageDelta {
+  type: 'message_delta';
+  delta: { stop_reason: string };
+  usage: { output_tokens: number };
+}
+
+export interface StreamEventMessageStop {
+  type: 'message_stop';
+}
+
+export type StreamEvent =
+  | StreamEventMessageStart
+  | StreamEventContentBlockStart
+  | StreamEventContentBlockDelta
+  | StreamEventContentBlockStop
+  | StreamEventMessageDelta
+  | StreamEventMessageStop
+  | { type: 'ping' };
+
 export const COMPUTER_USE_TOOL = {
   type: 'computer_20250124' as const,
   name: 'computer' as const,

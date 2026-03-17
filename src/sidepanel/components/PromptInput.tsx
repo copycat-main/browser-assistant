@@ -1,12 +1,26 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAgentLoop } from '../hooks/useAgentLoop';
 
-export default function PromptInput() {
+interface Props {
+  prefillPrompt?: string;
+  onPromptUsed?: () => void;
+}
+
+export default function PromptInput({ prefillPrompt, onPromptUsed }: Props) {
   const [prompt, setPrompt] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { status, startAgent, stopAgent } = useAgentLoop();
 
   const isRunning = status === 'running' || status === 'stopping';
+
+  // Handle prefill from landing page
+  useEffect(() => {
+    if (prefillPrompt) {
+      setPrompt(prefillPrompt);
+      onPromptUsed?.();
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    }
+  }, [prefillPrompt, onPromptUsed]);
 
   const handleSubmit = () => {
     const trimmed = prompt.trim();
@@ -30,7 +44,7 @@ export default function PromptInput() {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isRunning ? 'Agent is working...' : 'What should I do?'}
+          placeholder={isRunning ? 'Working on it...' : 'Ask me anything or tell me what to do...'}
           disabled={isRunning}
           rows={2}
           className="flex-1 resize-none rounded-xl border border-tan-200 bg-white px-3 py-2 text-sm
