@@ -1,4 +1,5 @@
 let attachedTabId: number | null = null;
+let originalTabId: number | null = null;
 
 export async function attach(tabId: number): Promise<void> {
   if (attachedTabId === tabId) return;
@@ -7,6 +8,7 @@ export async function attach(tabId: number): Promise<void> {
   }
   await chrome.debugger.attach({ tabId }, '1.3');
   attachedTabId = tabId;
+  originalTabId = tabId;
 
   await chrome.debugger.sendCommand({ tabId }, 'Target.setAutoAttach', {
     autoAttach: true,
@@ -17,6 +19,32 @@ export async function attach(tabId: number): Promise<void> {
   await chrome.debugger.sendCommand({ tabId }, 'Page.enable', {});
 }
 
+export async function switchToTab(tabId: number): Promise<void> {
+  if (attachedTabId === tabId) return;
+  // Detach from current tab
+  if (attachedTabId !== null) {
+    try {
+      await chrome.debugger.detach({ tabId: attachedTabId });
+    } catch {
+      // Already detached
+    }
+  }
+  // Attach to new tab
+  await chrome.debugger.attach({ tabId }, '1.3');
+  attachedTabId = tabId;
+
+  await chrome.debugger.sendCommand({ tabId }, 'Target.setAutoAttach', {
+    autoAttach: true,
+    waitForDebuggerOnStart: false,
+    flatten: true,
+  });
+
+  await chrome.debugger.sendCommand({ tabId }, 'Page.enable', {});
+
+  // Focus the new tab
+  await chrome.tabs.update(tabId, { active: true });
+}
+
 export async function detach(): Promise<void> {
   if (attachedTabId === null) return;
   try {
@@ -25,10 +53,15 @@ export async function detach(): Promise<void> {
     // Already detached
   }
   attachedTabId = null;
+  originalTabId = null;
 }
 
 export function getAttachedTabId(): number | null {
   return attachedTabId;
+}
+
+export function getOriginalTabId(): number | null {
+  return originalTabId;
 }
 
 export async function dispatchMouseEvent(
