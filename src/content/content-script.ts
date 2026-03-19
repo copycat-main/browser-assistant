@@ -10,12 +10,16 @@ function showGlow() {
     inset: 0;
     z-index: 2147483647;
     pointer-events: none;
-    border: 3px solid rgba(180, 130, 70, 0.7);
+    border: 2px solid rgba(180, 130, 70, 0.7);
     border-radius: 0;
-    box-shadow: inset 0 0 50px rgba(180, 130, 70, 0.35), 0 0 20px rgba(180, 130, 70, 0.25);
-    transition: opacity 0.3s ease;
+    box-shadow: inset 0 0 60px 20px rgba(180, 130, 70, 0.35), inset 0 0 120px 50px rgba(180, 130, 70, 0.15);
+    opacity: 0;
+    transition: opacity 0.4s ease;
   `;
   document.documentElement.appendChild(glowOverlay);
+  requestAnimationFrame(() => {
+    if (glowOverlay) glowOverlay.style.opacity = '1';
+  });
 
   glowBanner = document.createElement('div');
   glowBanner.id = 'copycat-glow-banner';
@@ -35,9 +39,13 @@ function showGlow() {
     padding: 6px 18px;
     border-radius: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transition: opacity 0.3s ease;
+    opacity: 0;
+    transition: opacity 0.4s ease;
   `;
   document.documentElement.appendChild(glowBanner);
+  requestAnimationFrame(() => {
+    if (glowBanner) glowBanner.style.opacity = '1';
+  });
 }
 
 function hideGlow() {

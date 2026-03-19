@@ -187,6 +187,7 @@ async function startAgent(prompt: string) {
           historyBroadcast,
           abortController.signal,
           settings.characteristic,
+          sendGlow,
         );
         break;
 
@@ -231,51 +232,78 @@ function stopAgent() {
 }
 
 function sendGlow(tabId: number, show: boolean) {
-  const script = show
-    ? `(function() {
-        if (document.getElementById('copycat-glow')) return;
-        const style = document.createElement('style');
-        style.id = 'copycat-glow-style';
-        style.textContent = \`
-          @keyframes copycatPulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-          }
-        \`;
-        document.head.appendChild(style);
+  if (show) {
+    injectGlow(tabId);
+  } else {
+    removeGlow(tabId);
+  }
+}
 
-        const el = document.createElement('div');
-        el.id = 'copycat-glow';
-        el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;pointer-events:none;' +
-          'border:3px solid rgba(180,130,70,0.7);' +
-          'box-shadow:inset 0 0 50px 20px rgba(180,130,70,0.35), inset 0 0 100px 40px rgba(180,130,70,0.15);' +
-          'animation:copycatPulse 3s ease-in-out infinite;';
-        document.documentElement.appendChild(el);
+function injectGlow(tabId: number) {
+  const func = () => {
+    if (document.getElementById('copycat-glow')) return;
 
-        const banner = document.createElement('div');
-        banner.id = 'copycat-banner';
-        banner.textContent = 'CopyCat is currently controlling this browser';
-        banner.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;' +
-          'pointer-events:none;background:rgba(180,130,70,0.85);color:#fff;font-family:-apple-system,sans-serif;' +
-          'font-size:13px;font-weight:600;padding:6px 18px;border-radius:20px;' +
-          'box-shadow:0 2px 8px rgba(0,0,0,0.15);animation:copycatPulse 3s ease-in-out infinite;';
-        document.documentElement.appendChild(banner);
-      })()`
-    : `(function() {
-        const el = document.getElementById('copycat-glow');
-        if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s ease'; setTimeout(() => el.remove(), 300); }
-        const banner = document.getElementById('copycat-banner');
-        if (banner) { banner.style.opacity = '0'; banner.style.transition = 'opacity 0.3s ease'; setTimeout(() => banner.remove(), 300); }
-        const style = document.getElementById('copycat-glow-style');
-        if (style) setTimeout(() => style.remove(), 300);
-      })()`;
+    const el = document.createElement('div');
+    el.id = 'copycat-glow';
+    el.style.cssText =
+      'position:fixed;inset:0;z-index:2147483647;pointer-events:none;' +
+      'border:2px solid rgba(180,130,70,0.7);' +
+      'box-shadow:inset 0 0 60px 20px rgba(180,130,70,0.35), inset 0 0 120px 50px rgba(180,130,70,0.15);' +
+      'opacity:0;transition:opacity 0.4s ease;';
+    document.documentElement.appendChild(el);
+    requestAnimationFrame(() => {
+      el.style.opacity = '1';
+    });
+
+    const banner = document.createElement('div');
+    banner.id = 'copycat-banner';
+    banner.textContent = 'CopyCat is currently controlling this browser';
+    banner.style.cssText =
+      'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;' +
+      'pointer-events:none;background:rgba(180,130,70,0.85);color:#fff;font-family:-apple-system,sans-serif;' +
+      'font-size:13px;font-weight:600;padding:6px 18px;border-radius:20px;' +
+      'box-shadow:0 2px 8px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.4s ease;';
+    document.documentElement.appendChild(banner);
+    requestAnimationFrame(() => {
+      banner.style.opacity = '1';
+    });
+  };
+
+  // Try debugger first (works when attached in automate mode), fall back to scripting API
+  chrome.debugger
+    .sendCommand({ tabId }, 'Runtime.evaluate', {
+      expression: `(${func.toString()})()`,
+      returnByValue: true,
+    })
+    .catch(() => {
+      chrome.scripting.executeScript({ target: { tabId }, func }).catch(() => {});
+    });
+}
+
+function removeGlow(tabId: number) {
+  const func = () => {
+    const el = document.getElementById('copycat-glow');
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => el.remove(), 300);
+    }
+    const banner = document.getElementById('copycat-banner');
+    if (banner) {
+      banner.style.opacity = '0';
+      banner.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => banner.remove(), 300);
+    }
+  };
 
   chrome.debugger
     .sendCommand({ tabId }, 'Runtime.evaluate', {
-      expression: script,
+      expression: `(${func.toString()})()`,
       returnByValue: true,
     })
-    .catch(() => {});
+    .catch(() => {
+      chrome.scripting.executeScript({ target: { tabId }, func }).catch(() => {});
+    });
 }
 
 async function loadSettings(): Promise<Settings> {
