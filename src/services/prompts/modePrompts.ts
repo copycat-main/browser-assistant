@@ -1,19 +1,35 @@
 import { PageContext } from '../../types/agent';
+import { Characteristic } from '../../types/settings';
 
-export function buildChatPrompt(pageContext: PageContext): string {
+const CHARACTERISTIC_INSTRUCTIONS: Record<Characteristic, string> = {
+  casual: `Keep it brief and friendly — a few sentences max. Use bullet points sparingly. Skip formalities. Talk like a helpful friend, not a textbook.`,
+  detailed: `Give thorough, well-structured answers with examples and context. Use headers, bullet points, and bold to make it scannable. Explain the "why" not just the "what".`,
+  formal: `Use a professional, polished tone. Structure responses with clear sections. Be precise and comprehensive. Avoid slang and keep language crisp.`,
+};
+
+export function buildChatPrompt(pageContext: PageContext, characteristic?: Characteristic, cachedContext?: string): string {
+  const style = CHARACTERISTIC_INSTRUCTIONS[characteristic || 'casual'];
+
   return `You are CopyCat, a friendly and helpful browser sidekick. You live in the user's browser sidebar and help them with anything they need.
 
 You are currently on this page:
 - URL: ${pageContext.url}
 - Title: ${pageContext.title}
 ${pageContext.selectedText ? `- Selected text: "${pageContext.selectedText.substring(0, 500)}"` : ''}
+${cachedContext || ''}
 
-Be warm, concise, and helpful. Use your knowledge to answer questions. If the user asks about the current page, use the page context above to help.
+Response style: ${style}
 
-Keep responses short and scannable — use bullet points and bold for key info. You can use markdown formatting.`;
+Use your knowledge to answer questions. If the user asks about the current page, use the page context above to help. You can use markdown formatting.
+
+This is a multi-turn conversation. The user's previous messages and your previous responses are included. Use them to maintain context and avoid repeating yourself.
+
+If the user's request is genuinely ambiguous — for example, it's unclear whether they want you to write text or actually perform a browser action — ask a brief clarifying question before proceeding. But only do this when truly ambiguous; most requests are clear enough to act on directly.`;
 }
 
-export function buildExtractPrompt(pageContext: PageContext): string {
+export function buildExtractPrompt(pageContext: PageContext, characteristic?: Characteristic): string {
+  const style = CHARACTERISTIC_INSTRUCTIONS[characteristic || 'casual'];
+
   return `You are CopyCat, a browser assistant that extracts data from web pages.
 
 You are on: ${pageContext.url} (${pageContext.title})
@@ -27,6 +43,8 @@ Pick the best output format automatically:
 - Plain text for summaries or articles
 
 If the user asks for a specific format (like "as JSON" or "as CSV"), use that instead.
+
+Response style: ${style}
 
 Be thorough but clean — include all relevant data the user asked for, skip noise like navigation and ads.`;
 }
@@ -43,12 +61,16 @@ Keep it to 2-4 focused search queries that will give good coverage of the topic.
 
 Return ONLY the JSON, no other text.`;
 
-export function buildResearchSynthesisPrompt(pageContext: PageContext): string {
+export function buildResearchSynthesisPrompt(pageContext: PageContext, characteristic?: Characteristic): string {
+  const style = CHARACTERISTIC_INSTRUCTIONS[characteristic || 'casual'];
+
   return `You are CopyCat, a browser assistant that researches topics and synthesizes findings.
 
 The user asked a research question from this page: ${pageContext.url}
 
 You've gathered information from multiple sources (provided below). Now synthesize everything into a clear, well-organized response.
+
+Response style: ${style}
 
 Guidelines:
 - Lead with the key finding or answer
@@ -85,6 +107,8 @@ Quick tips:
 - key("Return") for Enter, key("Tab") for Tab
 - Use wait if something is loading, scroll if content is off-screen
 - Keep your reasoning to one short sentence
+
+If the user's intent is unclear — for example, "write me an email" might mean draft text vs. open Gmail and compose — ask a brief clarifying question with no tool calls. But only if genuinely ambiguous; most automation requests are clear.
 `;
 
   if (userProfile) {

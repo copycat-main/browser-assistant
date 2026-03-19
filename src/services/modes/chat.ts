@@ -1,23 +1,40 @@
-import { PageContext, SWToPanelMessage } from '../../types/agent';
+import { ChatMessage, PageContext, SWToPanelMessage } from '../../types/agent';
+import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
+import { AnthropicMessage } from '../../types/anthropic';
 import { streamMessage } from '../anthropicApi';
 import { buildChatPrompt } from '../prompts/modePrompts';
 
 export async function handleChat(
   apiKey: string,
-  model: string,
   prompt: string,
   pageContext: PageContext,
   broadcast: (msg: SWToPanelMessage) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  characteristic?: Characteristic,
+  history?: ChatMessage[],
+  cachedContext?: string
 ): Promise<void> {
-  const systemPrompt = buildChatPrompt(pageContext);
+  const systemPrompt = buildChatPrompt(pageContext, characteristic, cachedContext);
 
-  const messages = [
-    {
-      role: 'user' as const,
-      content: [{ type: 'text' as const, text: prompt }],
-    },
-  ];
+  // Build multi-turn messages from history
+  const messages: AnthropicMessage[] = [];
+
+  if (history && history.length > 1) {
+    // Include prior messages (everything except the last user message, which is the current prompt)
+    const priorMessages = history.slice(0, -1);
+    for (const msg of priorMessages) {
+      messages.push({
+        role: msg.role,
+        content: [{ type: 'text' as const, text: msg.content }],
+      });
+    }
+  }
+
+  // Add current user message
+  messages.push({
+    role: 'user' as const,
+    content: [{ type: 'text' as const, text: prompt }],
+  });
 
   // Broadcast user message
   broadcast({
@@ -32,7 +49,7 @@ export async function handleChat(
 
   await streamMessage(
     apiKey,
-    model,
+    DEFAULT_MODEL,
     systemPrompt,
     messages,
     (delta) => {

@@ -1,6 +1,6 @@
 import { AgentStep, SWToPanelMessage } from '../../types/agent';
 import { AnthropicMessage, AnthropicContent, AnthropicToolUseBlock, ComputerAction } from '../../types/anthropic';
-import { Settings } from '../../types/settings';
+import { Settings, DEFAULT_MODEL } from '../../types/settings';
 import { sendMessage } from '../anthropicApi';
 import { buildAutomatePrompt } from '../prompts/modePrompts';
 import { captureAndScaleScreenshot, ScreenshotResult } from '../screenshotService';
@@ -162,7 +162,7 @@ export async function handleAutomate(
 
       const response = await sendMessage(
         settings.apiKey,
-        settings.model,
+        DEFAULT_MODEL,
         systemPrompt,
         messages,
         signal

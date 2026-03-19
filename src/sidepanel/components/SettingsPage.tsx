@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAgentStore } from '../store/agentStore';
 import { useSettings } from '../hooks/useSettings';
-import { Settings, Template } from '../../types/settings';
+import { Settings, Template, Characteristic } from '../../types/settings';
 
 const PROFILE_FIELDS: [string, string][] = [
   ['fullName', 'Full Name'],
@@ -182,17 +182,28 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-tan-700 uppercase tracking-wider font-karla">
-                Model
+                Response Style
               </label>
-              <select
-                value={draft.model}
-                onChange={(e) => updateField('model', e.target.value)}
-                className="w-full rounded-xl border border-tan-200 bg-white px-3 py-2 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-tan-400 font-karla"
-              >
-                <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
-                <option value="claude-opus-4-20250514">Claude Opus 4</option>
-              </select>
+              <div className="grid grid-cols-3 gap-2">
+                {(['casual', 'detailed', 'formal'] as Characteristic[]).map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => updateField('characteristic', c)}
+                    className={`px-3 py-2 rounded-xl text-sm font-medium font-karla transition-colors
+                      ${draft.characteristic === c
+                        ? 'bg-tan-400 text-white'
+                        : 'bg-white border border-tan-200 text-tan-600 hover:border-tan-400'
+                      }`}
+                  >
+                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-tan-400 font-karla">
+                {draft.characteristic === 'casual' && 'Short, friendly responses. Gets to the point fast.'}
+                {draft.characteristic === 'detailed' && 'Thorough answers with examples and context.'}
+                {draft.characteristic === 'formal' && 'Professional tone with structured, polished responses.'}
+              </p>
             </div>
           </>
         )}

@@ -1,4 +1,4 @@
-import { AgentStatus, PanelToSWMessage, SWToPanelMessage, TaskMode } from '../types/agent';
+import { AgentStatus, ChatMessage, PanelToSWMessage, SWToPanelMessage, TaskMode } from '../types/agent';
 import { Settings, DEFAULT_SETTINGS } from '../types/settings';
 import { classifyIntent } from '../services/router';
 import { getPageContext } from '../services/pageContext';
@@ -6,10 +6,15 @@ import { handleChat } from '../services/modes/chat';
 import { handleExtract } from '../services/modes/extract';
 import { handleResearch } from '../services/modes/research';
 import { handleAutomate } from '../services/modes/automate';
+import { loadPageContext, savePageContext, buildContextSummary, clearAllPageContexts } from '../services/contextCache';
 
 let agentStatus: AgentStatus = 'idle';
 let currentMode: TaskMode | null = null;
 let abortController: AbortController | null = null;
+
+// Conversation history maintained in the service worker
+let conversationHistory: ChatMessage[] = [];
+const MAX_HISTORY_MESSAGES = 40; // 20 turns (user + assistant pairs)
 
 // Handle CDP events: page navigations
 chrome.debugger.onEvent.addListener(async (source, method) => {
@@ -38,6 +43,10 @@ chrome.runtime.onMessage.addListener((message: PanelToSWMessage, _sender, sendRe
       stopAgent();
       sendResponse({ ok: true });
       break;
+    case 'CLEAR_CHAT':
+      conversationHistory = [];
+      sendResponse({ ok: true });
+      break;
     case 'GET_STATE':
       sendResponse({ status: agentStatus, mode: currentMode });
       break;
@@ -56,6 +65,14 @@ async function handleGetPageContext() {
 
 function broadcast(message: SWToPanelMessage) {
   chrome.runtime.sendMessage(message).catch(() => {});
+}
+
+function addToHistory(message: ChatMessage) {
+  conversationHistory.push(message);
+  // Trim oldest messages if over budget
+  if (conversationHistory.length > MAX_HISTORY_MESSAGES) {
+    conversationHistory = conversationHistory.slice(-MAX_HISTORY_MESSAGES);
+  }
 }
 
 async function startAgent(prompt: string) {
@@ -85,10 +102,32 @@ async function startAgent(prompt: string) {
     // Get page context
     const pageContext = await getPageContext(tabId);
 
+    // Load cached context for this page (from prior sessions)
+    let cachedContext = '';
+    if (conversationHistory.length === 0) {
+      // Only load cache if this is a fresh conversation (no in-memory history)
+      try {
+        const cached = await loadPageContext(pageContext.url);
+        if (cached) {
+          cachedContext = buildContextSummary(cached);
+        }
+      } catch {
+        // Cache miss is fine
+      }
+    }
+
+    // Track the user message in history
+    const userMessage: ChatMessage = {
+      id: `msg_${Date.now()}_user`,
+      role: 'user',
+      content: prompt,
+      timestamp: Date.now(),
+    };
+    addToHistory(userMessage);
+
     // Classify intent
     const mode = await classifyIntent(
       settings.apiKey,
-      settings.model,
       prompt,
       pageContext,
       abortController.signal
@@ -97,23 +136,41 @@ async function startAgent(prompt: string) {
     currentMode = mode;
     broadcast({ type: 'TASK_MODE', mode });
 
+    // Wrap broadcast to capture assistant messages into history
+    const historyBroadcast = (msg: SWToPanelMessage) => {
+      if (msg.type === 'CHAT_MESSAGE' && msg.message.role === 'assistant') {
+        addToHistory(msg.message);
+      }
+      broadcast(msg);
+    };
+
+    // Pass conversation history to chat/extract modes (they benefit from context)
+    const history = [...conversationHistory];
+
     // Dispatch to appropriate handler
     switch (mode) {
       case 'chat':
-        await handleChat(settings.apiKey, settings.model, prompt, pageContext, broadcast, abortController.signal);
+        await handleChat(settings.apiKey, prompt, pageContext, historyBroadcast, abortController.signal, settings.characteristic, history, cachedContext);
         break;
 
       case 'extract':
-        await handleExtract(settings.apiKey, settings.model, prompt, pageContext, tabId, broadcast, abortController.signal);
+        await handleExtract(settings.apiKey, prompt, pageContext, tabId, historyBroadcast, abortController.signal, settings.characteristic, history);
         break;
 
       case 'research':
-        await handleResearch(settings.apiKey, settings.model, prompt, pageContext, broadcast, abortController.signal);
+        await handleResearch(settings.apiKey, prompt, pageContext, historyBroadcast, abortController.signal, settings.characteristic);
         break;
 
       case 'automate':
-        await handleAutomate(prompt, tabId, settings, broadcast, sendGlow, abortController.signal);
+        await handleAutomate(prompt, tabId, settings, historyBroadcast, sendGlow, abortController.signal);
         break;
+    }
+
+    // Save conversation to page context cache after successful completion
+    try {
+      await savePageContext(pageContext.url, pageContext.title, conversationHistory);
+    } catch {
+      // Cache save failure is non-critical
     }
 
     agentStatus = 'idle';

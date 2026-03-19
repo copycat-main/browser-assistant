@@ -1,4 +1,5 @@
 import { PageContext, SWToPanelMessage, ResearchProgress } from '../../types/agent';
+import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
 import { sendMessage, streamMessage } from '../anthropicApi';
 import { RESEARCH_PLAN_PROMPT, buildResearchSynthesisPrompt } from '../prompts/modePrompts';
 
@@ -10,11 +11,11 @@ interface ResearchSource {
 
 export async function handleResearch(
   apiKey: string,
-  model: string,
   prompt: string,
   pageContext: PageContext,
   broadcast: (msg: SWToPanelMessage) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  characteristic?: Characteristic
 ): Promise<void> {
   // Get the current active tab — we do all navigation in this single tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -50,7 +51,7 @@ export async function handleResearch(
       },
     ];
 
-    const planResponse = await sendMessage(apiKey, model, RESEARCH_PLAN_PROMPT, planMessages, signal, false);
+    const planResponse = await sendMessage(apiKey, DEFAULT_MODEL, RESEARCH_PLAN_PROMPT, planMessages, signal, false);
     const planText = planResponse.content.find(b => b.type === 'text');
 
     let queries: string[] = [];
@@ -126,7 +127,7 @@ export async function handleResearch(
       sources: sources.map(s => ({ title: s.title, url: s.url })),
     });
 
-    const synthesisPrompt = buildResearchSynthesisPrompt(pageContext);
+    const synthesisPrompt = buildResearchSynthesisPrompt(pageContext, characteristic);
 
     let sourcesContext = '';
     for (const source of sources) {
@@ -145,7 +146,7 @@ export async function handleResearch(
 
     await streamMessage(
       apiKey,
-      model,
+      DEFAULT_MODEL,
       synthesisPrompt,
       synthesisMessages,
       (delta) => {

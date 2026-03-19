@@ -1,9 +1,11 @@
 import { TaskMode, PageContext } from '../types/agent';
+import { DEFAULT_MODEL } from '../types/settings';
 import { ROUTER_PROMPT } from './prompts/routerPrompt';
 
 const CHAT_PATTERNS = [
   /^(what|who|why|how|when|where|which|is|are|was|were|do|does|did|can|could|would|should|tell me|explain|describe)\s/i,
   /\?$/,
+  /^(write|draft|compose|create|generate|make)\s+(me\s+)?(a\s+|an\s+)?(tweet|post|email|message|letter|essay|paragraph|summary|text|response|reply|bio|caption|headline|title|tagline|slogan|script|outline|article|blog|report|review|description|pitch|proposal|story|poem|song|joke)/i,
 ];
 
 const EXTRACT_PATTERNS = [
@@ -34,7 +36,6 @@ export function classifyIntentFast(prompt: string): TaskMode | null {
 
 export async function classifyIntentWithAI(
   apiKey: string,
-  model: string,
   prompt: string,
   pageContext: PageContext,
   signal?: AbortSignal
@@ -50,7 +51,7 @@ export async function classifyIntentWithAI(
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model,
+      model: DEFAULT_MODEL,
       max_tokens: 10,
       system: ROUTER_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
@@ -72,7 +73,6 @@ export async function classifyIntentWithAI(
 
 export async function classifyIntent(
   apiKey: string,
-  model: string,
   prompt: string,
   pageContext: PageContext,
   signal?: AbortSignal
@@ -80,5 +80,5 @@ export async function classifyIntent(
   const fastResult = classifyIntentFast(prompt);
   if (fastResult) return fastResult;
 
-  return classifyIntentWithAI(apiKey, model, prompt, pageContext, signal);
+  return classifyIntentWithAI(apiKey, prompt, pageContext, signal);
 }
