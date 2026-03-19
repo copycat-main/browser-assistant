@@ -244,6 +244,7 @@ async function extractSearchResults(tabId: number): Promise<{ title: string; url
             !href.includes('vimeo.com') &&
             !href.includes('dailymotion.com') &&
             !href.includes('tiktok.com') &&
+            !href.includes('instagram.com/reel') &&
             text.length > 10 &&
             !href.includes('#') &&
             ((a as HTMLElement).closest('[data-sokoban-container]') !== null ||
