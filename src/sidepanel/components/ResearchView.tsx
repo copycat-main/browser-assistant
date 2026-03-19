@@ -12,11 +12,11 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const STAGE_ICONS: Record<string, string> = {
-  planning: '🧠',
-  searching: '🔍',
-  reading: '📖',
-  synthesizing: '✨',
-  done: '✅',
+  planning: 'psychology',
+  searching: 'search',
+  reading: 'menu_book',
+  synthesizing: 'auto_awesome',
+  done: 'check_circle',
 };
 
 export default function ResearchView() {
@@ -44,7 +44,12 @@ export default function ResearchView() {
         <div className="rounded-xl border border-tan-200 bg-white p-3 space-y-2">
           {/* Stage indicator */}
           <div className="flex items-center gap-2">
-            <span className="text-base">{STAGE_ICONS[researchProgress.stage] || '🔄'}</span>
+            <span
+              className="material-symbols-rounded text-base text-tan-600"
+              style={{ fontSize: '20px' }}
+            >
+              {STAGE_ICONS[researchProgress.stage] || 'sync'}
+            </span>
             <span className="text-sm font-semibold text-tan-800 font-karla">
               {STAGE_LABELS[researchProgress.stage] || researchProgress.stage}
             </span>
@@ -61,7 +66,12 @@ export default function ResearchView() {
               </p>
               {researchProgress.sources.map((source, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs text-tan-600 font-karla">
-                  <span className="text-tan-400">📄</span>
+                  <span
+                    className="material-symbols-rounded text-tan-400"
+                    style={{ fontSize: '16px' }}
+                  >
+                    description
+                  </span>
                   <span className="truncate">{source.title}</span>
                 </div>
               ))}

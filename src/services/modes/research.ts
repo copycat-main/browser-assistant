@@ -16,6 +16,7 @@ export async function handleResearch(
   broadcast: (msg: SWToPanelMessage) => void,
   signal?: AbortSignal,
   characteristic?: Characteristic,
+  sendGlow?: (tabId: number, show: boolean) => void,
 ): Promise<void> {
   // Get the current active tab — we do all navigation in this single tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -36,6 +37,13 @@ export async function handleResearch(
   const broadcastProgress = (progress: ResearchProgress) => {
     broadcast({ type: 'RESEARCH_PROGRESS', progress });
   };
+
+  // Continuously inject the overlay so it persists through page navigations
+  let glowActive = true;
+  const glowInterval = setInterval(() => {
+    if (glowActive) sendGlow?.(tabId, true);
+  }, 100);
+  sendGlow?.(tabId, true);
 
   try {
     // Step 1: Create research plan
@@ -127,7 +135,10 @@ export async function handleResearch(
       }
     }
 
-    // Step 3: Navigate back to the original page
+    // Step 3: Navigate back to the original page and remove overlay
+    glowActive = false;
+    clearInterval(glowInterval);
+    sendGlow?.(tabId, false);
     try {
       await chrome.tabs.update(tabId, { url: originalUrl });
       await waitForTabLoad(tabId, 5000);
@@ -189,7 +200,10 @@ export async function handleResearch(
       signal,
     );
   } catch (error) {
-    // Try to go back to original page on error
+    // Stop overlay loop and try to go back to original page on error
+    glowActive = false;
+    clearInterval(glowInterval);
+    sendGlow?.(tabId, false);
     try {
       await chrome.tabs.update(tabId, { url: originalUrl });
     } catch {}
@@ -225,6 +239,11 @@ async function extractSearchResults(tabId: number): Promise<{ title: string; url
             !href.includes('google.com') &&
             !href.includes('googleapis.com') &&
             !href.includes('gstatic.com') &&
+            !href.includes('youtube.com') &&
+            !href.includes('youtu.be') &&
+            !href.includes('vimeo.com') &&
+            !href.includes('dailymotion.com') &&
+            !href.includes('tiktok.com') &&
             text.length > 10 &&
             !href.includes('#') &&
             ((a as HTMLElement).closest('[data-sokoban-container]') !== null ||

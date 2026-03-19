@@ -16,7 +16,7 @@ export type Template = Record<string, string>;
 
 export type Characteristic = 'casual' | 'detailed' | 'formal';
 
-export const DEFAULT_MODEL = 'claude-sonnet-4-5-20250514';
+export const DEFAULT_MODEL = 'claude-sonnet-4-6';
 
 export interface Settings {
   apiKey: string;

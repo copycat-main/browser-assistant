@@ -29,13 +29,13 @@ export default function FormattedOutput({ content }: Props) {
   return <div>{renderMarkdown(content)}</div>;
 }
 
-// Strip markdown artifacts so the text reads clean
+// Strip markdown artifacts for plain text contexts (e.g., headers)
 function cleanInline(text: string): string {
   return text
-    .replace(/\*\*(.+?)\*\*/g, '$1') // **bold** → bold
-    .replace(/\*(.+?)\*/g, '$1') // *italic* → italic
-    .replace(/__(.+?)__/g, '$1') // __bold__ → bold
-    .replace(/_(.+?)_/g, '$1'); // _italic_ → italic
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/_(.+?)_/g, '$1');
 }
 
 function renderMarkdown(text: string): React.ReactNode[] {
@@ -156,10 +156,14 @@ function renderInline(text: string): React.ReactNode {
   let key = 0;
 
   while (remaining.length > 0) {
-    // Inline code (keep these styled)
+    // Inline code
     const codeMatch = remaining.match(/`([^`]+)`/);
     // Link
     const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    // Bold
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    // Italic
+    const italicMatch = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/);
 
     let earliest: { type: string; index: number; match: RegExpMatchArray } | null = null;
 
@@ -173,16 +177,29 @@ function renderInline(text: string): React.ReactNode {
     ) {
       earliest = { type: 'link', index: linkMatch.index, match: linkMatch };
     }
+    if (
+      boldMatch &&
+      boldMatch.index !== undefined &&
+      (!earliest || boldMatch.index < earliest.index)
+    ) {
+      earliest = { type: 'bold', index: boldMatch.index, match: boldMatch };
+    }
+    if (
+      italicMatch &&
+      italicMatch.index !== undefined &&
+      (!earliest || italicMatch.index < earliest.index)
+    ) {
+      earliest = { type: 'italic', index: italicMatch.index, match: italicMatch };
+    }
 
     if (!earliest) {
-      // Clean remaining text of bold/italic markers
-      parts.push(cleanInline(remaining));
+      parts.push(remaining);
       break;
     }
 
-    // Add cleaned text before match
+    // Add text before match
     if (earliest.index > 0) {
-      parts.push(cleanInline(remaining.substring(0, earliest.index)));
+      parts.push(remaining.substring(0, earliest.index));
     }
 
     if (earliest.type === 'code') {
@@ -200,8 +217,20 @@ function renderInline(text: string): React.ReactNode {
           rel="noopener noreferrer"
           className="text-tan-600 underline hover:text-tan-800"
         >
-          {cleanInline(earliest.match[1])}
+          {earliest.match[1]}
         </a>,
+      );
+    } else if (earliest.type === 'bold') {
+      parts.push(
+        <strong key={key++} className="font-semibold text-tan-900">
+          {earliest.match[1]}
+        </strong>,
+      );
+    } else if (earliest.type === 'italic') {
+      parts.push(
+        <em key={key++} className="italic text-tan-700">
+          {earliest.match[1]}
+        </em>,
       );
     }
 
