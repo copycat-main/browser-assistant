@@ -1,32 +1,46 @@
-import { PageContext, SWToPanelMessage } from '../../types/agent';
+import { ChatMessage, PageContext, SWToPanelMessage } from '../../types/agent';
+import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
+import { AnthropicMessage } from '../../types/anthropic';
 import { streamMessage } from '../anthropicApi';
 import { buildExtractPrompt } from '../prompts/modePrompts';
 import { getPageText } from '../pageContext';
 
 export async function handleExtract(
   apiKey: string,
-  model: string,
   prompt: string,
   pageContext: PageContext,
   tabId: number,
   broadcast: (msg: SWToPanelMessage) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  characteristic?: Characteristic,
+  history?: ChatMessage[],
 ): Promise<void> {
-  const systemPrompt = buildExtractPrompt(pageContext);
+  const systemPrompt = buildExtractPrompt(pageContext, characteristic);
 
   // Get page text content
   const pageData = await getPageText(tabId);
-
   const userContent = `${prompt}\n\n--- Page Content ---\n${pageData.text.substring(0, 30000)}`;
 
-  const messages = [
-    {
-      role: 'user' as const,
-      content: [{ type: 'text' as const, text: userContent }],
-    },
-  ];
+  // Build multi-turn messages from history
+  const messages: AnthropicMessage[] = [];
 
-  // Broadcast user message
+  if (history && history.length > 1) {
+    const priorMessages = history.slice(0, -1);
+    for (const msg of priorMessages) {
+      messages.push({
+        role: msg.role,
+        content: [{ type: 'text' as const, text: msg.content }],
+      });
+    }
+  }
+
+  // Add current user message (with page content appended)
+  messages.push({
+    role: 'user' as const,
+    content: [{ type: 'text' as const, text: userContent }],
+  });
+
+  // Broadcast user message (without the page content noise)
   broadcast({
     type: 'CHAT_MESSAGE',
     message: {
@@ -39,7 +53,7 @@ export async function handleExtract(
 
   await streamMessage(
     apiKey,
-    model,
+    DEFAULT_MODEL,
     systemPrompt,
     messages,
     (delta) => {
@@ -57,6 +71,6 @@ export async function handleExtract(
         },
       });
     },
-    signal
+    signal,
   );
 }

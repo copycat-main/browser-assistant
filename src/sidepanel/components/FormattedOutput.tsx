@@ -7,12 +7,17 @@ interface Props {
 export default function FormattedOutput({ content }: Props) {
   // Detect if content is JSON
   const trimmed = content.trim();
-  if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && (trimmed.endsWith('}') || trimmed.endsWith(']'))) {
+  if (
+    (trimmed.startsWith('{') || trimmed.startsWith('[')) &&
+    (trimmed.endsWith('}') || trimmed.endsWith(']'))
+  ) {
     try {
       const parsed = JSON.parse(trimmed);
       return (
-        <pre className="bg-tan-100 border border-tan-200 rounded-lg p-3 text-xs font-mono
-                        overflow-x-auto whitespace-pre-wrap text-tan-800">
+        <pre
+          className="bg-tan-100 border border-tan-200 rounded-lg p-3 text-xs font-mono
+                        overflow-x-auto whitespace-pre-wrap text-tan-800"
+        >
           {JSON.stringify(parsed, null, 2)}
         </pre>
       );
@@ -27,10 +32,10 @@ export default function FormattedOutput({ content }: Props) {
 // Strip markdown artifacts so the text reads clean
 function cleanInline(text: string): string {
   return text
-    .replace(/\*\*(.+?)\*\*/g, '$1')   // **bold** → bold
-    .replace(/\*(.+?)\*/g, '$1')        // *italic* → italic
-    .replace(/__(.+?)__/g, '$1')        // __bold__ → bold
-    .replace(/_(.+?)_/g, '$1');         // _italic_ → italic
+    .replace(/\*\*(.+?)\*\*/g, '$1') // **bold** → bold
+    .replace(/\*(.+?)\*/g, '$1') // *italic* → italic
+    .replace(/__(.+?)__/g, '$1') // __bold__ → bold
+    .replace(/_(.+?)_/g, '$1'); // _italic_ → italic
 }
 
 function renderMarkdown(text: string): React.ReactNode[] {
@@ -47,9 +52,12 @@ function renderMarkdown(text: string): React.ReactNode[] {
     if (line.startsWith('```')) {
       if (inCodeBlock) {
         elements.push(
-          <pre key={`code-${codeKey++}`} className="bg-tan-100 border border-tan-200 rounded-lg p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-tan-800 my-2">
+          <pre
+            key={`code-${codeKey++}`}
+            className="bg-tan-100 border border-tan-200 rounded-lg p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-tan-800 my-2"
+          >
             {codeContent.trim()}
-          </pre>
+          </pre>,
         );
         codeContent = '';
         inCodeBlock = false;
@@ -66,15 +74,27 @@ function renderMarkdown(text: string): React.ReactNode[] {
 
     // Headers — strip markdown markers, show as clean styled text
     if (line.startsWith('### ')) {
-      elements.push(<h4 key={i} className="font-semibold text-tan-900 mt-3 mb-1 text-sm font-karla">{cleanInline(line.slice(4))}</h4>);
+      elements.push(
+        <h4 key={i} className="font-semibold text-tan-900 mt-3 mb-1 text-sm font-karla">
+          {cleanInline(line.slice(4))}
+        </h4>,
+      );
       continue;
     }
     if (line.startsWith('## ')) {
-      elements.push(<h3 key={i} className="font-bold text-tan-900 mt-3 mb-1 text-sm font-karla">{cleanInline(line.slice(3))}</h3>);
+      elements.push(
+        <h3 key={i} className="font-bold text-tan-900 mt-3 mb-1 text-sm font-karla">
+          {cleanInline(line.slice(3))}
+        </h3>,
+      );
       continue;
     }
     if (line.startsWith('# ')) {
-      elements.push(<h2 key={i} className="font-bold text-tan-900 mt-3 mb-1 font-karla">{cleanInline(line.slice(2))}</h2>);
+      elements.push(
+        <h2 key={i} className="font-bold text-tan-900 mt-3 mb-1 font-karla">
+          {cleanInline(line.slice(2))}
+        </h2>,
+      );
       continue;
     }
 
@@ -84,7 +104,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
         <div key={i} className="flex gap-2 text-tan-700 text-[13px] font-karla leading-relaxed">
           <span className="text-tan-400 shrink-0 mt-0.5">•</span>
           <span>{renderInline(line.slice(2))}</span>
-        </div>
+        </div>,
       );
       continue;
     }
@@ -96,7 +116,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
         <div key={i} className="flex gap-2 text-tan-700 text-[13px] font-karla leading-relaxed">
           <span className="text-tan-400 shrink-0 mt-0.5 min-w-[16px]">{numMatch[1]}.</span>
           <span>{renderInline(line.slice(numMatch[0].length))}</span>
-        </div>
+        </div>,
       );
       continue;
     }
@@ -111,16 +131,19 @@ function renderMarkdown(text: string): React.ReactNode[] {
     elements.push(
       <p key={i} className="text-tan-700 text-[13px] font-karla leading-relaxed">
         {renderInline(line)}
-      </p>
+      </p>,
     );
   }
 
   // Close unclosed code block
   if (inCodeBlock && codeContent) {
     elements.push(
-      <pre key={`code-${codeKey}`} className="bg-tan-100 border border-tan-200 rounded-lg p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-tan-800 my-2">
+      <pre
+        key={`code-${codeKey}`}
+        className="bg-tan-100 border border-tan-200 rounded-lg p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-tan-800 my-2"
+      >
         {codeContent.trim()}
-      </pre>
+      </pre>,
     );
   }
 
@@ -143,7 +166,11 @@ function renderInline(text: string): React.ReactNode {
     if (codeMatch && codeMatch.index !== undefined) {
       earliest = { type: 'code', index: codeMatch.index, match: codeMatch };
     }
-    if (linkMatch && linkMatch.index !== undefined && (!earliest || linkMatch.index < earliest.index)) {
+    if (
+      linkMatch &&
+      linkMatch.index !== undefined &&
+      (!earliest || linkMatch.index < earliest.index)
+    ) {
       earliest = { type: 'link', index: linkMatch.index, match: linkMatch };
     }
 
@@ -162,14 +189,19 @@ function renderInline(text: string): React.ReactNode {
       parts.push(
         <code key={key++} className="bg-tan-100 text-tan-800 px-1 py-0.5 rounded text-xs font-mono">
           {earliest.match[1]}
-        </code>
+        </code>,
       );
     } else if (earliest.type === 'link') {
       parts.push(
-        <a key={key++} href={earliest.match[2]} target="_blank" rel="noopener noreferrer"
-           className="text-tan-600 underline hover:text-tan-800">
+        <a
+          key={key++}
+          href={earliest.match[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-tan-600 underline hover:text-tan-800"
+        >
           {cleanInline(earliest.match[1])}
-        </a>
+        </a>,
       );
     }
 

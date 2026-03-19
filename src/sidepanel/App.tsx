@@ -65,10 +65,7 @@ export default function App() {
       {renderContent()}
       <div className="mt-auto">
         <StatusBar />
-        <PromptInput
-          prefillPrompt={prefillPrompt}
-          onPromptUsed={handlePromptUsed}
-        />
+        <PromptInput prefillPrompt={prefillPrompt} onPromptUsed={handlePromptUsed} />
       </div>
     </div>
   );

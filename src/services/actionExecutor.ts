@@ -9,7 +9,7 @@ interface ScaleFactors {
 export async function executeAction(
   tabId: number,
   action: ComputerAction,
-  scale: ScaleFactors
+  scale: ScaleFactors,
 ): Promise<string> {
   switch (action.action) {
     case 'screenshot':
@@ -41,7 +41,7 @@ export async function executeAction(
       return await scroll(tabId, action.coordinate, action.delta_x, action.delta_y, scale);
 
     case 'wait':
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 2000));
       return 'Waited 2 seconds';
 
     case 'mouse_move': {
@@ -54,9 +54,9 @@ export async function executeAction(
       const [sx, sy] = scaleCoord(action.start_coordinate, scale);
       const [ex, ey] = scaleCoord(action.coordinate, scale);
       await debugger_.dispatchMouseEvent(tabId, 'mousePressed', sx, sy, 'left');
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
       await debugger_.dispatchMouseEvent(tabId, 'mouseMoved', ex, ey, 'left');
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
       await debugger_.dispatchMouseEvent(tabId, 'mouseReleased', ex, ey, 'left');
       return `Dragged from (${action.start_coordinate[0]}, ${action.start_coordinate[1]}) to (${action.coordinate[0]}, ${action.coordinate[1]})`;
     }
@@ -67,10 +67,7 @@ export async function executeAction(
 }
 
 function scaleCoord(coord: [number, number], scale: ScaleFactors): [number, number] {
-  return [
-    Math.round(coord[0] * scale.scaleX),
-    Math.round(coord[1] * scale.scaleY),
-  ];
+  return [Math.round(coord[0] * scale.scaleX), Math.round(coord[1] * scale.scaleY)];
 }
 
 async function click(
@@ -78,27 +75,28 @@ async function click(
   coordinate: [number, number],
   button: 'left' | 'right' | 'middle',
   clickCount: number,
-  scale: ScaleFactors
+  scale: ScaleFactors,
 ): Promise<string> {
   const [x, y] = scaleCoord(coordinate, scale);
 
   // Move to position first
   await debugger_.dispatchMouseEvent(tabId, 'mouseMoved', x, y, button);
-  await new Promise(r => setTimeout(r, 50));
+  await new Promise((r) => setTimeout(r, 50));
 
   for (let i = 1; i <= clickCount; i++) {
     await debugger_.dispatchMouseEvent(tabId, 'mousePressed', x, y, button, i);
     await debugger_.dispatchMouseEvent(tabId, 'mouseReleased', x, y, button, i);
-    if (i < clickCount) await new Promise(r => setTimeout(r, 50));
+    if (i < clickCount) await new Promise((r) => setTimeout(r, 50));
   }
 
-  const clickType = clickCount === 2 ? 'Double-clicked' : clickCount === 3 ? 'Triple-clicked' : `${button}-clicked`;
+  const clickType =
+    clickCount === 2 ? 'Double-clicked' : clickCount === 3 ? 'Triple-clicked' : `${button}-clicked`;
   return `${clickType} at (${coordinate[0]}, ${coordinate[1]})`;
 }
 
 async function pressKey(tabId: number, keyCombo: string): Promise<string> {
   // Parse key combinations like "ctrl+a", "Return", "shift+Tab"
-  const parts = keyCombo.split('+').map(p => p.trim());
+  const parts = keyCombo.split('+').map((p) => p.trim());
   let modifiers = 0;
   const keys: string[] = [];
 
@@ -130,7 +128,7 @@ async function scroll(
   coordinate: [number, number],
   deltaX: number,
   deltaY: number,
-  scale: ScaleFactors
+  scale: ScaleFactors,
 ): Promise<string> {
   const [x, y] = scaleCoord(coordinate, scale);
   // Anthropic sends scroll amounts in "clicks" — multiply for pixel delta

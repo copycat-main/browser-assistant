@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useAgentStore } from '../store/agentStore';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import FormattedOutput from './FormattedOutput';
@@ -11,53 +11,89 @@ export default function ChatView() {
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-      {chatMessages.map((msg) => (
-        <div
+      {chatMessages.map((msg, index) => (
+        <MessageBubble
           key={msg.id}
-          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-        >
-          <div
-            className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
-              msg.role === 'user'
-                ? 'bg-tan-400 text-white rounded-br-md'
-                : 'bg-white border border-tan-200 rounded-bl-md'
-            }`}
-          >
-            {msg.role === 'user' ? (
-              <p className="text-sm font-karla leading-relaxed">{msg.content}</p>
-            ) : (
-              <div className="text-sm">
-                <FormattedOutput content={msg.content} />
-              </div>
-            )}
-          </div>
-        </div>
+          role={msg.role}
+          content={msg.content}
+          isLatest={index === chatMessages.length - 1 && status === 'idle'}
+        />
       ))}
 
       {/* Streaming text (not yet committed to messages) */}
       {streamingText && status === 'running' && (
-        <div className="flex justify-start">
+        <div className="flex justify-start animate-fade-in">
           <div className="max-w-[85%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
-            <div className="text-sm">
+            <div className="text-sm streaming-text">
               <FormattedOutput content={streamingText} />
             </div>
-            <span className="inline-block w-1.5 h-4 bg-tan-400 animate-pulse rounded-sm ml-0.5 -mb-0.5" />
+            <span className="inline-block w-1.5 h-4 bg-tan-400 rounded-sm ml-0.5 -mb-0.5 animate-cursor-blink" />
           </div>
         </div>
       )}
 
       {/* Thinking indicator */}
-      {status === 'running' && !streamingText && chatMessages.length > 0 && chatMessages[chatMessages.length - 1].role === 'user' && (
-        <div className="flex justify-start">
-          <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-tan-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-tan-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-tan-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+      {status === 'running' &&
+        !streamingText &&
+        chatMessages.length > 0 &&
+        chatMessages[chatMessages.length - 1].role === 'user' && (
+          <div className="flex justify-start animate-fade-in">
+            <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
+              <div className="flex gap-1.5 items-center py-0.5">
+                <span
+                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <span
+                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
+                  style={{ animationDelay: '200ms' }}
+                />
+                <span
+                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
+                  style={{ animationDelay: '400ms' }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+    </div>
+  );
+}
+
+function MessageBubble({
+  role,
+  content,
+  isLatest,
+}: {
+  role: 'user' | 'assistant';
+  content: string;
+  isLatest: boolean;
+}) {
+  const bubbleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isLatest && bubbleRef.current) {
+      bubbleRef.current.classList.add('animate-message-in');
+    }
+  }, [isLatest]);
+
+  return (
+    <div ref={bubbleRef} className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
+          role === 'user'
+            ? 'bg-tan-400 text-white rounded-br-md'
+            : 'bg-white border border-tan-200 rounded-bl-md'
+        }`}
+      >
+        {role === 'user' ? (
+          <p className="text-sm font-karla leading-relaxed">{content}</p>
+        ) : (
+          <div className="text-sm">
+            <FormattedOutput content={content} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

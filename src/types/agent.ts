@@ -38,6 +38,7 @@ export interface ResearchProgress {
 export type PanelToSWMessage =
   | { type: 'START_AGENT'; prompt: string }
   | { type: 'STOP_AGENT' }
+  | { type: 'CLEAR_CHAT' }
   | { type: 'GET_STATE' }
   | { type: 'GET_PAGE_CONTEXT' };
 

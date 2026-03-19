@@ -29,13 +29,15 @@ export default function ResearchView() {
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
       {/* User message */}
-      {chatMessages.filter(m => m.role === 'user').map((msg) => (
-        <div key={msg.id} className="flex justify-end">
-          <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 bg-tan-400 text-white">
-            <p className="text-sm font-karla leading-relaxed">{msg.content}</p>
+      {chatMessages
+        .filter((m) => m.role === 'user')
+        .map((msg) => (
+          <div key={msg.id} className="flex justify-end">
+            <div className="max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 bg-tan-400 text-white">
+              <p className="text-sm font-karla leading-relaxed">{msg.content}</p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
 
       {/* Research progress */}
       {researchProgress && status === 'running' && (
@@ -54,7 +56,9 @@ export default function ResearchView() {
           {/* Sources found */}
           {researchProgress.sources && researchProgress.sources.length > 0 && (
             <div className="space-y-1 pt-1 border-t border-tan-100">
-              <p className="text-[11px] text-tan-400 font-karla uppercase tracking-wider">Sources</p>
+              <p className="text-[11px] text-tan-400 font-karla uppercase tracking-wider">
+                Sources
+              </p>
               {researchProgress.sources.map((source, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs text-tan-600 font-karla">
                   <span className="text-tan-400">📄</span>
@@ -67,7 +71,10 @@ export default function ResearchView() {
           {/* Progress bar animation */}
           {researchProgress.stage !== 'done' && (
             <div className="h-1 bg-tan-100 rounded-full overflow-hidden">
-              <div className="h-full bg-tan-400 rounded-full animate-pulse" style={{ width: '60%' }} />
+              <div
+                className="h-full bg-tan-400 rounded-full animate-pulse"
+                style={{ width: '60%' }}
+              />
             </div>
           )}
         </div>
@@ -88,15 +95,17 @@ export default function ResearchView() {
       )}
 
       {/* Completed assistant messages */}
-      {chatMessages.filter(m => m.role === 'assistant').map((msg) => (
-        <div key={msg.id} className="flex justify-start">
-          <div className="max-w-[90%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
-            <div className="text-sm">
-              <FormattedOutput content={msg.content} />
+      {chatMessages
+        .filter((m) => m.role === 'assistant')
+        .map((msg) => (
+          <div key={msg.id} className="flex justify-start">
+            <div className="max-w-[90%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
+              <div className="text-sm">
+                <FormattedOutput content={msg.content} />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 }

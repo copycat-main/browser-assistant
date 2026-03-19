@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import { AgentStatus, AgentStep, TaskMode, ChatMessage, PageContext, ResearchProgress, SWToPanelMessage } from '../../types/agent';
+import {
+  AgentStatus,
+  AgentStep,
+  TaskMode,
+  ChatMessage,
+  PageContext,
+  ResearchProgress,
+  SWToPanelMessage,
+} from '../../types/agent';
 
 interface AgentState {
   status: AgentStatus;
@@ -39,25 +47,26 @@ export const useAgentStore = create<AgentState>((set) => ({
   addStep: (step) => set((state) => ({ steps: [...state.steps, step] })),
   updateStep: (stepId, updates) =>
     set((state) => ({
-      steps: state.steps.map((s) =>
-        s.id === stepId ? { ...s, ...updates } : s
-      ),
+      steps: state.steps.map((s) => (s.id === stepId ? { ...s, ...updates } : s)),
     })),
-  clearAll: () => set({
-    steps: [],
-    chatMessages: [],
-    streamingText: '',
-    taskMode: null,
-    researchProgress: null,
-  }),
+  clearAll: () =>
+    set({
+      steps: [],
+      chatMessages: [],
+      streamingText: '',
+      taskMode: null,
+      researchProgress: null,
+    }),
   setView: (view) => set({ currentView: view }),
   setTaskMode: (mode) => set({ taskMode: mode }),
-  addChatMessage: (message) => set((state) => ({
-    chatMessages: [...state.chatMessages, message],
-  })),
-  appendStreamText: (text) => set((state) => ({
-    streamingText: state.streamingText + text,
-  })),
+  addChatMessage: (message) =>
+    set((state) => ({
+      chatMessages: [...state.chatMessages, message],
+    })),
+  appendStreamText: (text) =>
+    set((state) => ({
+      streamingText: state.streamingText + text,
+    })),
   clearStreamText: () => set({ streamingText: '' }),
   setPageContext: (context) => set({ pageContext: context }),
   setResearchProgress: (progress) => set({ researchProgress: progress }),

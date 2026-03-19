@@ -1,6 +1,11 @@
 import { AgentStep, SWToPanelMessage } from '../../types/agent';
-import { AnthropicMessage, AnthropicContent, AnthropicToolUseBlock, ComputerAction } from '../../types/anthropic';
-import { Settings } from '../../types/settings';
+import {
+  AnthropicMessage,
+  AnthropicContent,
+  AnthropicToolUseBlock,
+  ComputerAction,
+} from '../../types/anthropic';
+import { Settings, DEFAULT_MODEL } from '../../types/settings';
 import { sendMessage } from '../anthropicApi';
 import { buildAutomatePrompt } from '../prompts/modePrompts';
 import { captureAndScaleScreenshot, ScreenshotResult } from '../screenshotService';
@@ -13,26 +18,39 @@ function generateStepId(): string {
 
 function describeAction(action: ComputerAction): string {
   switch (action.action) {
-    case 'screenshot': return 'Screenshot';
-    case 'left_click': return 'Click';
-    case 'right_click': return 'Right-click';
-    case 'double_click': return 'Double-click';
-    case 'middle_click': return 'Middle-click';
-    case 'triple_click': return 'Triple-click';
-    case 'type': return `Type "${action.text.substring(0, 30)}${action.text.length > 30 ? '...' : ''}"`;
-    case 'key': return `Press ${action.text}`;
-    case 'scroll': return 'Scroll';
-    case 'wait': return 'Wait';
-    case 'mouse_move': return 'Move mouse';
-    case 'left_click_drag': return 'Drag';
-    default: return 'Action';
+    case 'screenshot':
+      return 'Screenshot';
+    case 'left_click':
+      return 'Click';
+    case 'right_click':
+      return 'Right-click';
+    case 'double_click':
+      return 'Double-click';
+    case 'middle_click':
+      return 'Middle-click';
+    case 'triple_click':
+      return 'Triple-click';
+    case 'type':
+      return `Type "${action.text.substring(0, 30)}${action.text.length > 30 ? '...' : ''}"`;
+    case 'key':
+      return `Press ${action.text}`;
+    case 'scroll':
+      return 'Scroll';
+    case 'wait':
+      return 'Wait';
+    case 'mouse_move':
+      return 'Move mouse';
+    case 'left_click_drag':
+      return 'Drag';
+    default:
+      return 'Action';
   }
 }
 
 async function waitForPageStability(tabId: number, maxWaitMs: number = 3000): Promise<void> {
   const start = Date.now();
   const checkInterval = 300;
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 200));
 
   while (Date.now() - start < maxWaitMs) {
     try {
@@ -41,7 +59,7 @@ async function waitForPageStability(tabId: number, maxWaitMs: number = 3000): Pr
     } catch {
       return;
     }
-    await new Promise(r => setTimeout(r, checkInterval));
+    await new Promise((r) => setTimeout(r, checkInterval));
   }
 }
 
@@ -78,7 +96,9 @@ async function detectAndSwitchToNewTab(knownTabIds: Set<number>): Promise<number
 
 // If the prompt is asking to go somewhere, Google it first
 async function preNavigate(prompt: string, tabId: number): Promise<boolean> {
-  const navMatch = prompt.match(/^(?:go to|navigate to|open|open up|visit|take me to|launch|go look at|check|pull up)\s+(.+)$/i);
+  const navMatch = prompt.match(
+    /^(?:go to|navigate to|open|open up|visit|take me to|launch|go look at|check|pull up)\s+(.+)$/i,
+  );
   if (!navMatch) return false;
 
   const target = navMatch[1].trim().replace(/[."']$/g, '');
@@ -92,8 +112,10 @@ async function preNavigate(prompt: string, tabId: number): Promise<boolean> {
     try {
       const tab = await chrome.tabs.get(tabId);
       if (tab.status === 'complete') break;
-    } catch { break; }
-    await new Promise(r => setTimeout(r, 300));
+    } catch {
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 300));
   }
 
   return true;
@@ -105,7 +127,7 @@ export async function handleAutomate(
   settings: Settings,
   broadcast: (msg: SWToPanelMessage) => void,
   sendGlow: (tabId: number, show: boolean) => void,
-  signal: AbortSignal
+  signal: AbortSignal,
 ): Promise<void> {
   // If the prompt is a navigation request, go there first before attaching debugger
   await preNavigate(prompt, tabId);
@@ -123,7 +145,7 @@ export async function handleAutomate(
   try {
     const systemPrompt = buildAutomatePrompt(
       flattenProfile(settings.userProfile),
-      settings.templates
+      settings.templates,
     );
 
     const initialScreenshot = await captureAndScaleScreenshot(tabId);
@@ -162,19 +184,24 @@ export async function handleAutomate(
 
       const response = await sendMessage(
         settings.apiKey,
-        settings.model,
+        DEFAULT_MODEL,
         systemPrompt,
         messages,
-        signal
+        signal,
       );
 
       const assistantContent = response.content;
       messages.push({ role: 'assistant', content: assistantContent });
 
-      const textBlocks = assistantContent.filter(b => b.type === 'text');
-      const toolUseBlocks = assistantContent.filter(b => b.type === 'tool_use') as AnthropicToolUseBlock[];
+      const textBlocks = assistantContent.filter((b) => b.type === 'text');
+      const toolUseBlocks = assistantContent.filter(
+        (b) => b.type === 'tool_use',
+      ) as AnthropicToolUseBlock[];
 
-      const reasoning = textBlocks.map(b => b.type === 'text' ? b.text : '').join('\n').trim();
+      const reasoning = textBlocks
+        .map((b) => (b.type === 'text' ? b.text : ''))
+        .join('\n')
+        .trim();
 
       if (toolUseBlocks.length === 0) {
         const finalStep: AgentStep = {
@@ -221,7 +248,7 @@ export async function handleAutomate(
                 sendGlow(newTabId, true);
               }
             } else {
-              await new Promise(r => setTimeout(r, 100));
+              await new Promise((r) => setTimeout(r, 100));
             }
           }
 
@@ -294,7 +321,8 @@ export async function handleAutomate(
 
         for (const toolUse of toolUseBlocks) {
           const alreadyErrored = toolResults.some(
-            r => r.type === 'tool_result' && (r as { tool_use_id: string }).tool_use_id === toolUse.id
+            (r) =>
+              r.type === 'tool_result' && (r as { tool_use_id: string }).tool_use_id === toolUse.id,
           );
           if (!alreadyErrored) {
             toolResults.push({
