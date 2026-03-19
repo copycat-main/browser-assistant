@@ -6,9 +6,9 @@ export async function getPageContext(tabId: number): Promise<PageContext> {
       target: { tabId },
       func: () => {
         const link = document.querySelector<HTMLLinkElement>(
-          'link[rel="icon"], link[rel="shortcut icon"], link[rel*="icon"]'
+          'link[rel="icon"], link[rel="shortcut icon"], link[rel*="icon"]',
         );
-        const favicon = link?.href || (window.location.origin + '/favicon.ico');
+        const favicon = link?.href || window.location.origin + '/favicon.ico';
         return {
           url: window.location.href,
           title: document.title,
@@ -29,7 +29,9 @@ async function fallbackContext(tabId: number): Promise<PageContext> {
     const tab = await chrome.tabs.get(tabId);
     const url = tab.url || '';
     let domain = '';
-    try { domain = new URL(url).hostname; } catch {}
+    try {
+      domain = new URL(url).hostname;
+    } catch {}
     return {
       url,
       title: tab.title || '',
@@ -42,19 +44,36 @@ async function fallbackContext(tabId: number): Promise<PageContext> {
   }
 }
 
-export async function getPageText(tabId: number): Promise<{ text: string; url: string; title: string }> {
+export async function getPageText(
+  tabId: number,
+): Promise<{ text: string; url: string; title: string }> {
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId },
       func: () => {
         const clone = document.body.cloneNode(true) as HTMLElement;
-        const removeSelectors = ['nav', 'footer', 'header', 'aside', '[role="navigation"]', '[role="banner"]', '.ad', '.ads', 'script', 'style', 'noscript'];
+        const removeSelectors = [
+          'nav',
+          'footer',
+          'header',
+          'aside',
+          '[role="navigation"]',
+          '[role="banner"]',
+          '.ad',
+          '.ads',
+          'script',
+          'style',
+          'noscript',
+        ];
         for (const sel of removeSelectors) {
-          clone.querySelectorAll(sel).forEach(el => el.remove());
+          clone.querySelectorAll(sel).forEach((el) => el.remove());
         }
         const text = clone.innerText || clone.textContent || '';
         return {
-          text: text.replace(/\n{3,}/g, '\n\n').trim().substring(0, 50000),
+          text: text
+            .replace(/\n{3,}/g, '\n\n')
+            .trim()
+            .substring(0, 50000),
           url: window.location.href,
           title: document.title,
         };

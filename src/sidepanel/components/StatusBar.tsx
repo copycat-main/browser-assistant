@@ -28,9 +28,10 @@ export default function StatusBar() {
   const canClear = status === 'idle' || status === 'error';
 
   const itemCount = taskMode === 'automate' ? steps.length : chatMessages.length;
-  const itemLabel = taskMode === 'automate'
-    ? `${itemCount} step${itemCount !== 1 ? 's' : ''}`
-    : `${itemCount} message${itemCount !== 1 ? 's' : ''}`;
+  const itemLabel =
+    taskMode === 'automate'
+      ? `${itemCount} step${itemCount !== 1 ? 's' : ''}`
+      : `${itemCount} message${itemCount !== 1 ? 's' : ''}`;
 
   return (
     <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-tan-700 font-karla">
@@ -45,10 +46,7 @@ export default function StatusBar() {
       {canClear && hasContent && (
         <>
           <span className="text-tan-300">|</span>
-          <button
-            onClick={clearAll}
-            className="text-tan-500 hover:text-tan-700 transition-colors"
-          >
+          <button onClick={clearAll} className="text-tan-500 hover:text-tan-700 transition-colors">
             Clear
           </button>
         </>

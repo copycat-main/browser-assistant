@@ -12,7 +12,7 @@ export interface ScreenshotResult {
 export async function captureAndScaleScreenshot(tabId: number): Promise<ScreenshotResult> {
   // Focus the tab first — captureVisibleTab requires it
   await chrome.tabs.update(tabId, { active: true });
-  await new Promise(r => setTimeout(r, 150));
+  await new Promise((r) => setTimeout(r, 150));
 
   // Get actual CSS viewport dimensions and DPR via the debugger (already attached)
   const { cssWidth, cssHeight } = await getViewportDimensions(tabId);
@@ -54,10 +54,13 @@ export async function captureAndScaleScreenshot(tabId: number): Promise<Screensh
   };
 }
 
-async function getViewportDimensions(tabId: number): Promise<{ cssWidth: number; cssHeight: number }> {
+async function getViewportDimensions(
+  tabId: number,
+): Promise<{ cssWidth: number; cssHeight: number }> {
   try {
     const result = await chrome.debugger.sendCommand({ tabId }, 'Runtime.evaluate', {
-      expression: 'JSON.stringify({ innerWidth: window.innerWidth, innerHeight: window.innerHeight })',
+      expression:
+        'JSON.stringify({ innerWidth: window.innerWidth, innerHeight: window.innerHeight })',
       returnByValue: true,
     });
     const parsed = JSON.parse((result as { result: { value: string } }).result.value);

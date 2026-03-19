@@ -97,9 +97,12 @@ export default function LandingPage({ onSelectPrompt }: Props) {
   const setPageContext = useAgentStore((s) => s.setPageContext);
 
   useEffect(() => {
-    chrome.runtime.sendMessage({ type: 'GET_PAGE_CONTEXT' }).then((ctx) => {
-      if (ctx) setPageContext(ctx);
-    }).catch(() => {});
+    chrome.runtime
+      .sendMessage({ type: 'GET_PAGE_CONTEXT' })
+      .then((ctx) => {
+        if (ctx) setPageContext(ctx);
+      })
+      .catch(() => {});
   }, [setPageContext]);
 
   const examples = getExampleQueries(pageContext);
@@ -109,11 +112,7 @@ export default function LandingPage({ onSelectPrompt }: Props) {
       {/* Logo and site context */}
       <div className="text-center space-y-3">
         <div className="flex items-center justify-center gap-3">
-          <img
-            src="/icons/icon-128.png"
-            alt="CopyCat"
-            className="w-12 h-12 opacity-60"
-          />
+          <img src="/icons/icon-128.png" alt="CopyCat" className="w-12 h-12 opacity-60" />
           {pageContext?.favicon && (
             <>
               <span className="text-tan-300 text-lg">+</span>
@@ -121,19 +120,20 @@ export default function LandingPage({ onSelectPrompt }: Props) {
                 src={pageContext.favicon}
                 alt=""
                 className="w-8 h-8 rounded-md"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             </>
           )}
         </div>
         {pageContext?.domain ? (
           <p className="text-sm text-tan-500 font-karla">
-            Ready to help on <span className="font-semibold text-tan-700">{pageContext.domain}</span>
+            Ready to help on{' '}
+            <span className="font-semibold text-tan-700">{pageContext.domain}</span>
           </p>
         ) : (
-          <p className="text-sm text-tan-500 font-karla">
-            Your browser sidekick — ask anything
-          </p>
+          <p className="text-sm text-tan-500 font-karla">Your browser sidekick — ask anything</p>
         )}
       </div>
 

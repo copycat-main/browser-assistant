@@ -11,7 +11,9 @@ export default function ReasoningStep({ step, index }: Props) {
   const bgColor = step.status === 'error' ? 'bg-red-50' : 'bg-tan-100';
 
   return (
-    <div className={`rounded-lg border ${borderColor} ${bgColor} overflow-hidden px-2.5 py-2 space-y-1`}>
+    <div
+      className={`rounded-lg border ${borderColor} ${bgColor} overflow-hidden px-2.5 py-2 space-y-1`}
+    >
       <div className="flex items-center gap-2">
         <span className="text-xs text-tan-400 font-mono w-4 shrink-0">
           {step.status === 'acting' || step.status === 'thinking' ? (
@@ -33,9 +35,7 @@ export default function ReasoningStep({ step, index }: Props) {
         </p>
       )}
       {step.error && (
-        <p className="text-[11px] text-red-600 font-medium font-karla">
-          {step.error}
-        </p>
+        <p className="text-[11px] text-red-600 font-medium font-karla">{step.error}</p>
       )}
       {step.screenshot && step.status !== 'thinking' && (
         <img

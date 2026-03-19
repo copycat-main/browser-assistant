@@ -18,7 +18,7 @@ export async function sendMessage(
   systemPrompt: string,
   messages: AnthropicMessage[],
   signal?: AbortSignal,
-  useTools: boolean = true
+  useTools: boolean = true,
 ): Promise<AnthropicResponse> {
   const preparedMessages = applyCacheControl(messages);
 
@@ -44,7 +44,7 @@ export async function streamMessage(
   messages: AnthropicMessage[],
   onDelta: (text: string) => void,
   onComplete: (fullText: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<void> {
   const response = await fetch(API_URL, {
     method: 'POST',
@@ -122,7 +122,10 @@ function applyCacheControl(messages: AnthropicMessage[]): AnthropicMessage[] {
       if (block.type === 'image') {
         delete (block as unknown as Record<string, unknown>).cache_control;
         imageRefs.push({ msgIdx: m, contentIdx: c });
-      } else if (block.type === 'tool_result' && Array.isArray((block as { content?: AnthropicContent[] }).content)) {
+      } else if (
+        block.type === 'tool_result' &&
+        Array.isArray((block as { content?: AnthropicContent[] }).content)
+      ) {
         const nested = (block as { content: AnthropicContent[] }).content;
         for (let n = 0; n < nested.length; n++) {
           if (nested[n].type === 'image') {
@@ -137,10 +140,16 @@ function applyCacheControl(messages: AnthropicMessage[]): AnthropicMessage[] {
   const toCache = imageRefs.slice(-MAX_CACHE_BLOCKS);
   for (const ref of toCache) {
     if (ref.nestedIdx !== undefined) {
-      const toolResult = cloned[ref.msgIdx].content[ref.contentIdx] as { content: AnthropicContent[] };
-      (toolResult.content[ref.nestedIdx] as unknown as Record<string, unknown>).cache_control = { type: 'ephemeral' };
+      const toolResult = cloned[ref.msgIdx].content[ref.contentIdx] as {
+        content: AnthropicContent[];
+      };
+      (toolResult.content[ref.nestedIdx] as unknown as Record<string, unknown>).cache_control = {
+        type: 'ephemeral',
+      };
     } else {
-      (cloned[ref.msgIdx].content[ref.contentIdx] as unknown as Record<string, unknown>).cache_control = { type: 'ephemeral' };
+      (
+        cloned[ref.msgIdx].content[ref.contentIdx] as unknown as Record<string, unknown>
+      ).cache_control = { type: 'ephemeral' };
     }
   }
 
@@ -151,7 +160,7 @@ async function fetchWithRetry(
   apiKey: string,
   body: Record<string, unknown>,
   signal?: AbortSignal,
-  retries: number = 5
+  retries: number = 5,
 ): Promise<AnthropicResponse> {
   for (let attempt = 0; attempt < retries; attempt++) {
     const response = await fetch(API_URL, {
@@ -171,7 +180,7 @@ async function fetchWithRetry(
       const retryAfter = response.headers.get('retry-after');
       const baseWait = response.status === 529 ? 5000 : 2000;
       const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : baseWait * Math.pow(2, attempt);
-      await new Promise(r => setTimeout(r, waitMs));
+      await new Promise((r) => setTimeout(r, waitMs));
       continue;
     }
 

@@ -1,5 +1,4 @@
 let attachedTabId: number | null = null;
-let originalTabId: number | null = null;
 
 export async function attach(tabId: number): Promise<void> {
   if (attachedTabId === tabId) return;
@@ -8,7 +7,6 @@ export async function attach(tabId: number): Promise<void> {
   }
   await chrome.debugger.attach({ tabId }, '1.3');
   attachedTabId = tabId;
-  originalTabId = tabId;
 
   await chrome.debugger.sendCommand({ tabId }, 'Target.setAutoAttach', {
     autoAttach: true,
@@ -53,15 +51,10 @@ export async function detach(): Promise<void> {
     // Already detached
   }
   attachedTabId = null;
-  originalTabId = null;
 }
 
 export function getAttachedTabId(): number | null {
   return attachedTabId;
-}
-
-export function getOriginalTabId(): number | null {
-  return originalTabId;
 }
 
 export async function dispatchMouseEvent(
@@ -70,7 +63,7 @@ export async function dispatchMouseEvent(
   x: number,
   y: number,
   button: 'left' | 'right' | 'middle' = 'left',
-  clickCount: number = 1
+  clickCount: number = 1,
 ): Promise<void> {
   await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
     type,
@@ -86,7 +79,7 @@ export async function dispatchKeyEvent(
   tabId: number,
   type: 'keyDown' | 'keyUp',
   key: string,
-  modifiers: number = 0
+  modifiers: number = 0,
 ): Promise<void> {
   const params: Record<string, unknown> = {
     type,
@@ -95,21 +88,21 @@ export async function dispatchKeyEvent(
   };
 
   const keyCodeMap: Record<string, { windowsVirtualKeyCode: number; code: string }> = {
-    'Return': { windowsVirtualKeyCode: 13, code: 'Enter' },
-    'Enter': { windowsVirtualKeyCode: 13, code: 'Enter' },
-    'Tab': { windowsVirtualKeyCode: 9, code: 'Tab' },
-    'Escape': { windowsVirtualKeyCode: 27, code: 'Escape' },
-    'Backspace': { windowsVirtualKeyCode: 8, code: 'Backspace' },
-    'Delete': { windowsVirtualKeyCode: 46, code: 'Delete' },
-    'ArrowUp': { windowsVirtualKeyCode: 38, code: 'ArrowUp' },
-    'ArrowDown': { windowsVirtualKeyCode: 40, code: 'ArrowDown' },
-    'ArrowLeft': { windowsVirtualKeyCode: 37, code: 'ArrowLeft' },
-    'ArrowRight': { windowsVirtualKeyCode: 39, code: 'ArrowRight' },
-    'Home': { windowsVirtualKeyCode: 36, code: 'Home' },
-    'End': { windowsVirtualKeyCode: 35, code: 'End' },
-    'PageUp': { windowsVirtualKeyCode: 33, code: 'PageUp' },
-    'PageDown': { windowsVirtualKeyCode: 34, code: 'PageDown' },
-    'space': { windowsVirtualKeyCode: 32, code: 'Space' },
+    Return: { windowsVirtualKeyCode: 13, code: 'Enter' },
+    Enter: { windowsVirtualKeyCode: 13, code: 'Enter' },
+    Tab: { windowsVirtualKeyCode: 9, code: 'Tab' },
+    Escape: { windowsVirtualKeyCode: 27, code: 'Escape' },
+    Backspace: { windowsVirtualKeyCode: 8, code: 'Backspace' },
+    Delete: { windowsVirtualKeyCode: 46, code: 'Delete' },
+    ArrowUp: { windowsVirtualKeyCode: 38, code: 'ArrowUp' },
+    ArrowDown: { windowsVirtualKeyCode: 40, code: 'ArrowDown' },
+    ArrowLeft: { windowsVirtualKeyCode: 37, code: 'ArrowLeft' },
+    ArrowRight: { windowsVirtualKeyCode: 39, code: 'ArrowRight' },
+    Home: { windowsVirtualKeyCode: 36, code: 'Home' },
+    End: { windowsVirtualKeyCode: 35, code: 'End' },
+    PageUp: { windowsVirtualKeyCode: 33, code: 'PageUp' },
+    PageDown: { windowsVirtualKeyCode: 34, code: 'PageDown' },
+    space: { windowsVirtualKeyCode: 32, code: 'Space' },
   };
 
   const mapped = keyCodeMap[key];
@@ -130,7 +123,7 @@ export async function dispatchScrollEvent(
   x: number,
   y: number,
   deltaX: number,
-  deltaY: number
+  deltaY: number,
 ): Promise<void> {
   await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
     type: 'mouseWheel',

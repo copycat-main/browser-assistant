@@ -1,4 +1,10 @@
-import { AgentStatus, ChatMessage, PanelToSWMessage, SWToPanelMessage, TaskMode } from '../types/agent';
+import {
+  AgentStatus,
+  ChatMessage,
+  PanelToSWMessage,
+  SWToPanelMessage,
+  TaskMode,
+} from '../types/agent';
 import { Settings, DEFAULT_SETTINGS } from '../types/settings';
 import { classifyIntent } from '../services/router';
 import { getPageContext } from '../services/pageContext';
@@ -6,7 +12,7 @@ import { handleChat } from '../services/modes/chat';
 import { handleExtract } from '../services/modes/extract';
 import { handleResearch } from '../services/modes/research';
 import { handleAutomate } from '../services/modes/automate';
-import { loadPageContext, savePageContext, buildContextSummary, clearAllPageContexts } from '../services/contextCache';
+import { loadPageContext, savePageContext, buildContextSummary } from '../services/contextCache';
 
 let agentStatus: AgentStatus = 'idle';
 let currentMode: TaskMode | null = null;
@@ -85,7 +91,10 @@ async function startAgent(prompt: string) {
   const settings = await loadSettings();
 
   if (!settings.apiKey) {
-    broadcast({ type: 'AGENT_ERROR', error: 'No API key configured. Please add your Anthropic API key in settings.' });
+    broadcast({
+      type: 'AGENT_ERROR',
+      error: 'No API key configured. Please add your Anthropic API key in settings.',
+    });
     agentStatus = 'error';
     return;
   }
@@ -126,12 +135,7 @@ async function startAgent(prompt: string) {
     addToHistory(userMessage);
 
     // Classify intent
-    const mode = await classifyIntent(
-      settings.apiKey,
-      prompt,
-      pageContext,
-      abortController.signal
-    );
+    const mode = await classifyIntent(settings.apiKey, prompt, pageContext, abortController.signal);
 
     currentMode = mode;
     broadcast({ type: 'TASK_MODE', mode });
@@ -150,19 +154,51 @@ async function startAgent(prompt: string) {
     // Dispatch to appropriate handler
     switch (mode) {
       case 'chat':
-        await handleChat(settings.apiKey, prompt, pageContext, historyBroadcast, abortController.signal, settings.characteristic, history, cachedContext);
+        await handleChat(
+          settings.apiKey,
+          prompt,
+          pageContext,
+          historyBroadcast,
+          abortController.signal,
+          settings.characteristic,
+          history,
+          cachedContext,
+        );
         break;
 
       case 'extract':
-        await handleExtract(settings.apiKey, prompt, pageContext, tabId, historyBroadcast, abortController.signal, settings.characteristic, history);
+        await handleExtract(
+          settings.apiKey,
+          prompt,
+          pageContext,
+          tabId,
+          historyBroadcast,
+          abortController.signal,
+          settings.characteristic,
+          history,
+        );
         break;
 
       case 'research':
-        await handleResearch(settings.apiKey, prompt, pageContext, historyBroadcast, abortController.signal, settings.characteristic);
+        await handleResearch(
+          settings.apiKey,
+          prompt,
+          pageContext,
+          historyBroadcast,
+          abortController.signal,
+          settings.characteristic,
+        );
         break;
 
       case 'automate':
-        await handleAutomate(prompt, tabId, settings, historyBroadcast, sendGlow, abortController.signal);
+        await handleAutomate(
+          prompt,
+          tabId,
+          settings,
+          historyBroadcast,
+          sendGlow,
+          abortController.signal,
+        );
         break;
     }
 
@@ -234,10 +270,12 @@ function sendGlow(tabId: number, show: boolean) {
         if (style) setTimeout(() => style.remove(), 300);
       })()`;
 
-  chrome.debugger.sendCommand({ tabId }, 'Runtime.evaluate', {
-    expression: script,
-    returnByValue: true,
-  }).catch(() => {});
+  chrome.debugger
+    .sendCommand({ tabId }, 'Runtime.evaluate', {
+      expression: script,
+      returnByValue: true,
+    })
+    .catch(() => {});
 }
 
 async function loadSettings(): Promise<Settings> {

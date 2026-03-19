@@ -13,7 +13,7 @@ export async function handleExtract(
   broadcast: (msg: SWToPanelMessage) => void,
   signal?: AbortSignal,
   characteristic?: Characteristic,
-  history?: ChatMessage[]
+  history?: ChatMessage[],
 ): Promise<void> {
   const systemPrompt = buildExtractPrompt(pageContext, characteristic);
 
@@ -71,6 +71,6 @@ export async function handleExtract(
         },
       });
     },
-    signal
+    signal,
   );
 }

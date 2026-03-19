@@ -59,7 +59,7 @@ function hideGlow() {
 
 function getFavicon(): string {
   const link = document.querySelector<HTMLLinkElement>(
-    'link[rel="icon"], link[rel="shortcut icon"], link[rel*="icon"]'
+    'link[rel="icon"], link[rel="shortcut icon"], link[rel*="icon"]',
   );
   if (link?.href) return link.href;
   return window.location.origin + '/favicon.ico';
@@ -68,13 +68,29 @@ function getFavicon(): string {
 function getPageText(): string {
   // Strip nav, footer, sidebar, ads for cleaner content
   const clone = document.body.cloneNode(true) as HTMLElement;
-  const removeSelectors = ['nav', 'footer', 'header', 'aside', '[role="navigation"]', '[role="banner"]', '.ad', '.ads', '.advertisement', 'script', 'style', 'noscript'];
+  const removeSelectors = [
+    'nav',
+    'footer',
+    'header',
+    'aside',
+    '[role="navigation"]',
+    '[role="banner"]',
+    '.ad',
+    '.ads',
+    '.advertisement',
+    'script',
+    'style',
+    'noscript',
+  ];
   for (const sel of removeSelectors) {
-    clone.querySelectorAll(sel).forEach(el => el.remove());
+    clone.querySelectorAll(sel).forEach((el) => el.remove());
   }
   const text = clone.innerText || clone.textContent || '';
   // Collapse whitespace and truncate
-  return text.replace(/\n{3,}/g, '\n\n').trim().substring(0, 50000);
+  return text
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .substring(0, 50000);
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

@@ -15,7 +15,7 @@ export async function handleResearch(
   pageContext: PageContext,
   broadcast: (msg: SWToPanelMessage) => void,
   signal?: AbortSignal,
-  characteristic?: Characteristic
+  characteristic?: Characteristic,
 ): Promise<void> {
   // Get the current active tab — we do all navigation in this single tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -44,20 +44,32 @@ export async function handleResearch(
     const planMessages = [
       {
         role: 'user' as const,
-        content: [{
-          type: 'text' as const,
-          text: `Research question: "${prompt}"\nCurrent page: ${pageContext.title} (${pageContext.url})`,
-        }],
+        content: [
+          {
+            type: 'text' as const,
+            text: `Research question: "${prompt}"\nCurrent page: ${pageContext.title} (${pageContext.url})`,
+          },
+        ],
       },
     ];
 
-    const planResponse = await sendMessage(apiKey, DEFAULT_MODEL, RESEARCH_PLAN_PROMPT, planMessages, signal, false);
-    const planText = planResponse.content.find(b => b.type === 'text');
+    const planResponse = await sendMessage(
+      apiKey,
+      DEFAULT_MODEL,
+      RESEARCH_PLAN_PROMPT,
+      planMessages,
+      signal,
+      false,
+    );
+    const planText = planResponse.content.find((b) => b.type === 'text');
 
     let queries: string[] = [];
     let approach = '';
     try {
-      const jsonStr = (planText && planText.type === 'text' ? planText.text : '{}').replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      const jsonStr = (planText && planText.type === 'text' ? planText.text : '{}')
+        .replace(/```json?\n?/g, '')
+        .replace(/```/g, '')
+        .trim();
       const plan = JSON.parse(jsonStr);
       queries = plan.queries || [];
       approach = plan.approach || '';
@@ -65,7 +77,10 @@ export async function handleResearch(
       queries = [prompt];
     }
 
-    broadcastProgress({ stage: 'planning', detail: approach || `Searching for ${queries.length} queries...` });
+    broadcastProgress({
+      stage: 'planning',
+      detail: approach || `Searching for ${queries.length} queries...`,
+    });
 
     // Step 2: Search each query in the current tab (single tab, sequential)
     const sources: ResearchSource[] = [];
@@ -90,7 +105,7 @@ export async function handleResearch(
         broadcastProgress({
           stage: 'reading',
           detail: `Reading: ${result.title}`,
-          sources: sources.map(s => ({ title: s.title, url: s.url })),
+          sources: sources.map((s) => ({ title: s.title, url: s.url })),
         });
 
         try {
@@ -124,7 +139,7 @@ export async function handleResearch(
     broadcastProgress({
       stage: 'synthesizing',
       detail: `Synthesizing ${sources.length} sources...`,
-      sources: sources.map(s => ({ title: s.title, url: s.url })),
+      sources: sources.map((s) => ({ title: s.title, url: s.url })),
     });
 
     const synthesisPrompt = buildResearchSynthesisPrompt(pageContext, characteristic);
@@ -137,10 +152,12 @@ export async function handleResearch(
     const synthesisMessages = [
       {
         role: 'user' as const,
-        content: [{
-          type: 'text' as const,
-          text: `Research question: "${prompt}"\n\nGathered sources:${sourcesContext}`,
-        }],
+        content: [
+          {
+            type: 'text' as const,
+            text: `Research question: "${prompt}"\n\nGathered sources:${sourcesContext}`,
+          },
+        ],
       },
     ];
 
@@ -156,7 +173,7 @@ export async function handleResearch(
         broadcastProgress({
           stage: 'done',
           detail: 'Research complete',
-          sources: sources.map(s => ({ title: s.title, url: s.url })),
+          sources: sources.map((s) => ({ title: s.title, url: s.url })),
         });
         broadcast({ type: 'STREAM_DONE', fullText });
         broadcast({
@@ -169,7 +186,7 @@ export async function handleResearch(
           },
         });
       },
-      signal
+      signal,
     );
   } catch (error) {
     // Try to go back to original page on error
@@ -189,7 +206,7 @@ async function waitForTabLoad(tabId: number, timeoutMs: number = 8000): Promise<
     } catch {
       return;
     }
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
   }
 }
 
@@ -211,18 +228,20 @@ async function extractSearchResults(tabId: number): Promise<{ title: string; url
             text.length > 10 &&
             !href.includes('#') &&
             ((a as HTMLElement).closest('[data-sokoban-container]') !== null ||
-            (a as HTMLElement).closest('.g') !== null ||
-            (a as HTMLElement).closest('[data-hveid]') !== null)
+              (a as HTMLElement).closest('.g') !== null ||
+              (a as HTMLElement).closest('[data-hveid]') !== null)
           ) {
             links.push({ title: text.substring(0, 100), url: href });
           }
         }
         const seen = new Set<string>();
-        return links.filter(l => {
-          if (seen.has(l.url)) return false;
-          seen.add(l.url);
-          return true;
-        }).slice(0, 5);
+        return links
+          .filter((l) => {
+            if (seen.has(l.url)) return false;
+            seen.add(l.url);
+            return true;
+          })
+          .slice(0, 5);
       },
     });
     return results[0]?.result || [];
@@ -237,9 +256,19 @@ async function extractPageText(tabId: number): Promise<string> {
       target: { tabId },
       func: () => {
         const clone = document.body.cloneNode(true) as HTMLElement;
-        const remove = ['nav', 'footer', 'header', 'aside', 'script', 'style', 'noscript', '.ad', '.ads'];
+        const remove = [
+          'nav',
+          'footer',
+          'header',
+          'aside',
+          'script',
+          'style',
+          'noscript',
+          '.ad',
+          '.ads',
+        ];
         for (const sel of remove) {
-          clone.querySelectorAll(sel).forEach(el => el.remove());
+          clone.querySelectorAll(sel).forEach((el) => el.remove());
         }
         return (clone.innerText || clone.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
       },

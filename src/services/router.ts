@@ -38,7 +38,7 @@ export async function classifyIntentWithAI(
   apiKey: string,
   prompt: string,
   pageContext: PageContext,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<TaskMode> {
   const userMessage = `Page: ${pageContext.title} (${pageContext.url})\nUser prompt: "${prompt}"`;
 
@@ -75,7 +75,7 @@ export async function classifyIntent(
   apiKey: string,
   prompt: string,
   pageContext: PageContext,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<TaskMode> {
   const fastResult = classifyIntentFast(prompt);
   if (fastResult) return fastResult;

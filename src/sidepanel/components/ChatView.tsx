@@ -33,22 +33,42 @@ export default function ChatView() {
       )}
 
       {/* Thinking indicator */}
-      {status === 'running' && !streamingText && chatMessages.length > 0 && chatMessages[chatMessages.length - 1].role === 'user' && (
-        <div className="flex justify-start animate-fade-in">
-          <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
-            <div className="flex gap-1.5 items-center py-0.5">
-              <span className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot" style={{ animationDelay: '200ms' }} />
-              <span className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot" style={{ animationDelay: '400ms' }} />
+      {status === 'running' &&
+        !streamingText &&
+        chatMessages.length > 0 &&
+        chatMessages[chatMessages.length - 1].role === 'user' && (
+          <div className="flex justify-start animate-fade-in">
+            <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
+              <div className="flex gap-1.5 items-center py-0.5">
+                <span
+                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <span
+                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
+                  style={{ animationDelay: '200ms' }}
+                />
+                <span
+                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
+                  style={{ animationDelay: '400ms' }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
 
-function MessageBubble({ role, content, isLatest }: { role: 'user' | 'assistant'; content: string; isLatest: boolean }) {
+function MessageBubble({
+  role,
+  content,
+  isLatest,
+}: {
+  role: 'user' | 'assistant';
+  content: string;
+  isLatest: boolean;
+}) {
   const bubbleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,10 +78,7 @@ function MessageBubble({ role, content, isLatest }: { role: 'user' | 'assistant'
   }, [isLatest]);
 
   return (
-    <div
-      ref={bubbleRef}
-      className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'}`}
-    >
+    <div ref={bubbleRef} className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'}`}>
       <div
         className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
           role === 'user'

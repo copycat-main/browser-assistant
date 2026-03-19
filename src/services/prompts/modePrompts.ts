@@ -7,7 +7,11 @@ const CHARACTERISTIC_INSTRUCTIONS: Record<Characteristic, string> = {
   formal: `Use a professional, polished tone. Structure responses with clear sections. Be precise and comprehensive. Avoid slang and keep language crisp.`,
 };
 
-export function buildChatPrompt(pageContext: PageContext, characteristic?: Characteristic, cachedContext?: string): string {
+export function buildChatPrompt(
+  pageContext: PageContext,
+  characteristic?: Characteristic,
+  cachedContext?: string,
+): string {
   const style = CHARACTERISTIC_INSTRUCTIONS[characteristic || 'casual'];
 
   return `You are CopyCat, a friendly and helpful browser sidekick. You live in the user's browser sidebar and help them with anything they need.
@@ -27,7 +31,10 @@ This is a multi-turn conversation. The user's previous messages and your previou
 If the user's request is genuinely ambiguous — for example, it's unclear whether they want you to write text or actually perform a browser action — ask a brief clarifying question before proceeding. But only do this when truly ambiguous; most requests are clear enough to act on directly.`;
 }
 
-export function buildExtractPrompt(pageContext: PageContext, characteristic?: Characteristic): string {
+export function buildExtractPrompt(
+  pageContext: PageContext,
+  characteristic?: Characteristic,
+): string {
   const style = CHARACTERISTIC_INSTRUCTIONS[characteristic || 'casual'];
 
   return `You are CopyCat, a browser assistant that extracts data from web pages.
@@ -61,7 +68,10 @@ Keep it to 2-4 focused search queries that will give good coverage of the topic.
 
 Return ONLY the JSON, no other text.`;
 
-export function buildResearchSynthesisPrompt(pageContext: PageContext, characteristic?: Characteristic): string {
+export function buildResearchSynthesisPrompt(
+  pageContext: PageContext,
+  characteristic?: Characteristic,
+): string {
   const style = CHARACTERISTIC_INSTRUCTIONS[characteristic || 'casual'];
 
   return `You are CopyCat, a browser assistant that researches topics and synthesizes findings.
@@ -83,7 +93,7 @@ Guidelines:
 
 export function buildAutomatePrompt(
   userProfile?: Record<string, string>,
-  templates?: Record<string, Record<string, string>>
+  templates?: Record<string, Record<string, string>>,
 ): string {
   let prompt = `You are CopyCat, a fast browser automation assistant. You see the user's screen and control it.
 

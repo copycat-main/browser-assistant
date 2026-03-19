@@ -38,7 +38,7 @@ export async function loadPageContext(url: string): Promise<PageCacheEntry | nul
 export async function savePageContext(
   url: string,
   title: string,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
 ): Promise<void> {
   const key = cacheKey(url);
 
@@ -58,19 +58,6 @@ export async function savePageContext(
 
   // Evict if over budget
   await evictIfNeeded();
-}
-
-export async function clearPageContext(url: string): Promise<void> {
-  const key = cacheKey(url);
-  await chrome.storage.local.remove(key);
-}
-
-export async function clearAllPageContexts(): Promise<void> {
-  const all = await chrome.storage.local.get(null);
-  const keysToRemove = Object.keys(all).filter(k => k.startsWith(CACHE_PREFIX));
-  if (keysToRemove.length > 0) {
-    await chrome.storage.local.remove(keysToRemove);
-  }
 }
 
 async function evictIfNeeded(): Promise<void> {
@@ -109,10 +96,7 @@ export function buildContextSummary(cached: PageCacheEntry): string {
   const lines: string[] = [];
   for (const msg of cached.messages.slice(-10)) {
     const prefix = msg.role === 'user' ? 'User' : 'Assistant';
-    // Truncate long messages in the summary
-    const content = msg.content.length > 300
-      ? msg.content.substring(0, 300) + '...'
-      : msg.content;
+    const content = msg.content.length > 300 ? msg.content.substring(0, 300) + '...' : msg.content;
     lines.push(`${prefix}: ${content}`);
   }
 

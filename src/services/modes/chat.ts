@@ -12,7 +12,7 @@ export async function handleChat(
   signal?: AbortSignal,
   characteristic?: Characteristic,
   history?: ChatMessage[],
-  cachedContext?: string
+  cachedContext?: string,
 ): Promise<void> {
   const systemPrompt = buildChatPrompt(pageContext, characteristic, cachedContext);
 
@@ -67,6 +67,6 @@ export async function handleChat(
         },
       });
     },
-    signal
+    signal,
   );
 }

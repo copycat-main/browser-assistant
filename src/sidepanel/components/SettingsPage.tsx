@@ -60,7 +60,11 @@ export default function SettingsPage() {
   };
 
   const renameTemplateField = (templateName: string, oldKey: string, newKey: string) => {
-    if (!newKey.trim() || (newKey !== oldKey && draft.templates[templateName]?.[newKey] !== undefined)) return;
+    if (
+      !newKey.trim() ||
+      (newKey !== oldKey && draft.templates[templateName]?.[newKey] !== undefined)
+    )
+      return;
     setDraft((d) => {
       const { [oldKey]: value, ...rest } = d.templates[templateName];
       return {
@@ -132,7 +136,16 @@ export default function SettingsPage() {
           onClick={() => setView('main')}
           className="p-1 rounded-lg hover:bg-tan-100 transition-colors text-tan-700"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -146,9 +159,10 @@ export default function SettingsPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`shrink-0 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors font-karla
-              ${activeTab === tab.id
-                ? 'bg-tan-100 text-tan-900 border border-b-0 border-tan-200'
-                : 'text-tan-500 hover:text-tan-700 hover:bg-tan-100/50'
+              ${
+                activeTab === tab.id
+                  ? 'bg-tan-100 text-tan-900 border border-b-0 border-tan-200'
+                  : 'text-tan-500 hover:text-tan-700 hover:bg-tan-100/50'
               }`}
           >
             {tab.label}
@@ -190,9 +204,10 @@ export default function SettingsPage() {
                     key={c}
                     onClick={() => updateField('characteristic', c)}
                     className={`px-3 py-2 rounded-xl text-sm font-medium font-karla transition-colors
-                      ${draft.characteristic === c
-                        ? 'bg-tan-400 text-white'
-                        : 'bg-white border border-tan-200 text-tan-600 hover:border-tan-400'
+                      ${
+                        draft.characteristic === c
+                          ? 'bg-tan-400 text-white'
+                          : 'bg-white border border-tan-200 text-tan-600 hover:border-tan-400'
                       }`}
                   >
                     {c.charAt(0).toUpperCase() + c.slice(1)}
@@ -200,9 +215,12 @@ export default function SettingsPage() {
                 ))}
               </div>
               <p className="text-[11px] text-tan-400 font-karla">
-                {draft.characteristic === 'casual' && 'Short, friendly responses. Gets to the point fast.'}
-                {draft.characteristic === 'detailed' && 'Thorough answers with examples and context.'}
-                {draft.characteristic === 'formal' && 'Professional tone with structured, polished responses.'}
+                {draft.characteristic === 'casual' &&
+                  'Short, friendly responses. Gets to the point fast.'}
+                {draft.characteristic === 'detailed' &&
+                  'Thorough answers with examples and context.'}
+                {draft.characteristic === 'formal' &&
+                  'Professional tone with structured, polished responses.'}
               </p>
             </div>
           </>
@@ -284,17 +302,29 @@ function TemplateEditor({
             autoFocus
             value={nameValue}
             onChange={(e) => setNameValue(e.target.value)}
-            onBlur={() => { onRename(nameValue); setEditingName(false); }}
+            onBlur={() => {
+              onRename(nameValue);
+              setEditingName(false);
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') { onRename(nameValue); setEditingName(false); }
-              if (e.key === 'Escape') { setNameValue(name); setEditingName(false); }
+              if (e.key === 'Enter') {
+                onRename(nameValue);
+                setEditingName(false);
+              }
+              if (e.key === 'Escape') {
+                setNameValue(name);
+                setEditingName(false);
+              }
             }}
             className="text-xs font-semibold text-tan-700 uppercase tracking-wider font-karla
                        bg-transparent border-b border-tan-400 focus:outline-none px-0"
           />
         ) : (
           <h3
-            onClick={() => { setNameValue(name); setEditingName(true); }}
+            onClick={() => {
+              setNameValue(name);
+              setEditingName(true);
+            }}
             className="text-xs font-semibold text-tan-700 uppercase tracking-wider font-karla
                        cursor-pointer hover:text-tan-900"
             title="Click to rename"
@@ -303,10 +333,16 @@ function TemplateEditor({
           </h3>
         )}
         <div className="flex items-center gap-2">
-          <button onClick={onAddField} className="text-xs text-tan-500 hover:text-tan-700 transition-colors font-karla">
+          <button
+            onClick={onAddField}
+            className="text-xs text-tan-500 hover:text-tan-700 transition-colors font-karla"
+          >
             + Field
           </button>
-          <button onClick={onRemove} className="text-xs text-red-400 hover:text-red-600 transition-colors font-karla">
+          <button
+            onClick={onRemove}
+            className="text-xs text-red-400 hover:text-red-600 transition-colors font-karla"
+          >
             Delete
           </button>
         </div>
@@ -314,7 +350,9 @@ function TemplateEditor({
 
       {/* Text fields */}
       <div className="space-y-2">
-        <h4 className="text-[11px] font-semibold text-tan-500 uppercase tracking-wider font-karla">Fields</h4>
+        <h4 className="text-[11px] font-semibold text-tan-500 uppercase tracking-wider font-karla">
+          Fields
+        </h4>
         {Object.entries(fields).map(([key, value]) => (
           <div key={key} className="space-y-1">
             <div className="flex items-center gap-1.5">
@@ -328,9 +366,20 @@ function TemplateEditor({
                 className="flex-1 text-xs text-tan-600 font-karla bg-transparent border-b border-transparent
                            focus:border-tan-300 focus:outline-none px-0 py-0.5"
               />
-              <button onClick={() => onRemoveField(key)} className="text-tan-400 hover:text-red-500 transition-colors shrink-0">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              <button
+                onClick={() => onRemoveField(key)}
+                className="text-tan-400 hover:text-red-500 transition-colors shrink-0"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             </div>
@@ -351,4 +400,3 @@ function TemplateEditor({
     </div>
   );
 }
-
