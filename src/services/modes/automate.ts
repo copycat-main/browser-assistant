@@ -5,7 +5,7 @@ import {
   AnthropicToolUseBlock,
   ComputerAction,
 } from '../../types/anthropic';
-import { Settings, DEFAULT_MODEL } from '../../types/settings';
+import { Settings, COMPUTER_USE_MODEL } from '../../types/settings';
 import { sendMessage } from '../anthropicApi';
 import { buildAutomatePrompt } from '../prompts/modePrompts';
 import { captureAndScaleScreenshot, ScreenshotResult } from '../screenshotService';
@@ -16,32 +16,36 @@ function generateStepId(): string {
   return `step_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 }
 
+function coordStr(coord: [number, number]): string {
+  return `(${coord[0]}, ${coord[1]})`;
+}
+
 function describeAction(action: ComputerAction): string {
   switch (action.action) {
     case 'screenshot':
       return 'Screenshot';
     case 'left_click':
-      return 'Click';
+      return `Click ${coordStr(action.coordinate)}`;
     case 'right_click':
-      return 'Right-click';
+      return `Right-click ${coordStr(action.coordinate)}`;
     case 'double_click':
-      return 'Double-click';
+      return `Double-click ${coordStr(action.coordinate)}`;
     case 'middle_click':
-      return 'Middle-click';
+      return `Middle-click ${coordStr(action.coordinate)}`;
     case 'triple_click':
-      return 'Triple-click';
+      return `Triple-click ${coordStr(action.coordinate)}`;
     case 'type':
       return `Type "${action.text.substring(0, 30)}${action.text.length > 30 ? '...' : ''}"`;
     case 'key':
       return `Press ${action.text}`;
     case 'scroll':
-      return 'Scroll';
+      return `Scroll ${coordStr(action.coordinate)}`;
     case 'wait':
       return 'Wait';
     case 'mouse_move':
-      return 'Move mouse';
+      return `Move mouse ${coordStr(action.coordinate)}`;
     case 'left_click_drag':
-      return 'Drag';
+      return `Drag ${coordStr(action.start_coordinate)} → ${coordStr(action.coordinate)}`;
     default:
       return 'Action';
   }
@@ -184,7 +188,7 @@ export async function handleAutomate(
 
       const response = await sendMessage(
         settings.apiKey,
-        DEFAULT_MODEL,
+        COMPUTER_USE_MODEL,
         systemPrompt,
         messages,
         signal,

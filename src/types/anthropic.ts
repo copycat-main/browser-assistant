@@ -116,10 +116,10 @@ export type StreamEvent =
   | { type: 'ping' };
 
 export const COMPUTER_USE_TOOL = {
-  type: 'computer_20250124' as const,
+  type: 'computer_20251124' as const,
   name: 'computer' as const,
   display_width_px: 1024,
   display_height_px: 768,
 };
 
-export const BETA_HEADER = 'computer-use-2025-01-24';
+export const BETA_HEADER = 'computer-use-2025-11-24';

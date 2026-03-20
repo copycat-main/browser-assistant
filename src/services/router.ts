@@ -1,5 +1,5 @@
 import { TaskMode, PageContext } from '../types/agent';
-import { DEFAULT_MODEL } from '../types/settings';
+import { ROUTER_MODEL } from '../types/settings';
 import { ROUTER_PROMPT } from './prompts/routerPrompt';
 
 const CHAT_PATTERNS = [
@@ -16,6 +16,7 @@ const EXTRACT_PATTERNS = [
 const RESEARCH_PATTERNS = [
   /^(research|look up|find out|investigate|compare|what are the best|find me|look into)\s/i,
   /^(search|search for|look for)\s+(?!.+\s+on\s+\w+)/i,
+  /^do\s+(deep\s+|some\s+|quick\s+)?research\s/i,
 ];
 
 export function classifyIntentFast(prompt: string): TaskMode | null {
@@ -51,7 +52,7 @@ export async function classifyIntentWithAI(
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: DEFAULT_MODEL,
+      model: ROUTER_MODEL,
       max_tokens: 10,
       system: ROUTER_PROMPT,
       messages: [{ role: 'user', content: userMessage }],

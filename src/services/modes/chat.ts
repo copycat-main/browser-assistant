@@ -1,5 +1,5 @@
 import { ChatMessage, PageContext, SWToPanelMessage } from '../../types/agent';
-import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
+import { Characteristic } from '../../types/settings';
 import { AnthropicMessage } from '../../types/anthropic';
 import { streamMessage } from '../anthropicApi';
 import { buildChatPrompt } from '../prompts/modePrompts';
@@ -13,6 +13,7 @@ export async function handleChat(
   characteristic?: Characteristic,
   history?: ChatMessage[],
   cachedContext?: string,
+  model?: string,
 ): Promise<void> {
   const systemPrompt = buildChatPrompt(pageContext, characteristic, cachedContext);
 
@@ -49,7 +50,7 @@ export async function handleChat(
 
   await streamMessage(
     apiKey,
-    DEFAULT_MODEL,
+    model!,
     systemPrompt,
     messages,
     (delta) => {

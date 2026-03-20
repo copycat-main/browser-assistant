@@ -28,7 +28,9 @@ Use your knowledge to answer questions. If the user asks about the current page,
 
 This is a multi-turn conversation. The user's previous messages and your previous responses are included. Use them to maintain context and avoid repeating yourself.
 
-If the user's request is genuinely ambiguous — for example, it's unclear whether they want you to write text or actually perform a browser action — ask a brief clarifying question before proceeding. But only do this when truly ambiguous; most requests are clear enough to act on directly.`;
+If the user's request is genuinely ambiguous — for example, it's unclear whether they want you to write text or actually perform a browser action — ask a brief clarifying question before proceeding. But only do this when truly ambiguous; most requests are clear enough to act on directly.
+
+You can only chat — you cannot click, navigate, or interact with the page. If the user seems to want browser actions or deep research, suggest they try rephrasing, e.g. "click on the sign up button" or "research [topic]".`;
 }
 
 export function buildExtractPrompt(
