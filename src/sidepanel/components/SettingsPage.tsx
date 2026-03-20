@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAgentStore } from '../store/agentStore';
 import { useSettings } from '../hooks/useSettings';
-import { Settings, Template, Characteristic } from '../../types/settings';
+import { Settings, Template, Characteristic, DEFAULT_MODEL } from '../../types/settings';
 
 const PROFILE_FIELDS: [string, string][] = [
   ['fullName', 'Full Name'],
@@ -193,6 +193,23 @@ export default function SettingsPage() {
                 className="w-full rounded-xl border border-tan-200 bg-white px-3 py-2 text-sm
                            focus:outline-none focus:ring-2 focus:ring-tan-400 font-karla"
               />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-tan-700 uppercase tracking-wider font-karla">
+                Model
+              </label>
+              <select
+                value={draft.model || DEFAULT_MODEL}
+                onChange={(e) => updateField('model', e.target.value)}
+                className="w-full rounded-xl border border-tan-200 bg-white px-3 py-2 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-tan-400 font-karla"
+              >
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+              </select>
+              <p className="text-[11px] text-tan-400 font-karla">
+                Model used for chat, extract, and research. Automate always uses Sonnet.
+              </p>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-tan-700 uppercase tracking-wider font-karla">

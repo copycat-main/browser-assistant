@@ -1,5 +1,5 @@
 import { PageContext, SWToPanelMessage, ResearchProgress } from '../../types/agent';
-import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
+import { Characteristic } from '../../types/settings';
 import { sendMessage, streamMessage } from '../anthropicApi';
 import { RESEARCH_PLAN_PROMPT, buildResearchSynthesisPrompt } from '../prompts/modePrompts';
 
@@ -17,6 +17,7 @@ export async function handleResearch(
   signal?: AbortSignal,
   characteristic?: Characteristic,
   sendGlow?: (tabId: number, show: boolean) => void,
+  model?: string,
 ): Promise<void> {
   // Get the current active tab — we do all navigation in this single tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -63,7 +64,7 @@ export async function handleResearch(
 
     const planResponse = await sendMessage(
       apiKey,
-      DEFAULT_MODEL,
+      model!,
       RESEARCH_PLAN_PROMPT,
       planMessages,
       signal,
@@ -174,7 +175,7 @@ export async function handleResearch(
 
     await streamMessage(
       apiKey,
-      DEFAULT_MODEL,
+      model!,
       synthesisPrompt,
       synthesisMessages,
       (delta) => {

@@ -1,5 +1,5 @@
 import { ChatMessage, PageContext, SWToPanelMessage } from '../../types/agent';
-import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
+import { Characteristic } from '../../types/settings';
 import { AnthropicMessage } from '../../types/anthropic';
 import { streamMessage } from '../anthropicApi';
 import { buildExtractPrompt } from '../prompts/modePrompts';
@@ -14,6 +14,7 @@ export async function handleExtract(
   signal?: AbortSignal,
   characteristic?: Characteristic,
   history?: ChatMessage[],
+  model?: string,
 ): Promise<void> {
   const systemPrompt = buildExtractPrompt(pageContext, characteristic);
 
@@ -53,7 +54,7 @@ export async function handleExtract(
 
   await streamMessage(
     apiKey,
-    DEFAULT_MODEL,
+    model!,
     systemPrompt,
     messages,
     (delta) => {

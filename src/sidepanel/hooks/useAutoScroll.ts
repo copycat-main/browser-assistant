@@ -8,8 +8,8 @@ export function useAutoScroll(deps: unknown[]) {
     const el = ref.current;
     if (!el) return;
     const onScroll = () => {
-      // Auto-scroll if user is near the bottom (within 120px)
-      shouldScroll.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+      // Auto-scroll if user is near the bottom (within 400px — generous for large screenshots)
+      shouldScroll.current = el.scrollHeight - el.scrollTop - el.clientHeight < 400;
     };
     el.addEventListener('scroll', onScroll);
     return () => el.removeEventListener('scroll', onScroll);

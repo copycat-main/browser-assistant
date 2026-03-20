@@ -5,7 +5,7 @@ import {
   SWToPanelMessage,
   TaskMode,
 } from '../types/agent';
-import { Settings, DEFAULT_SETTINGS } from '../types/settings';
+import { Settings, DEFAULT_SETTINGS, DEFAULT_MODEL } from '../types/settings';
 import { classifyIntent } from '../services/router';
 import { getPageContext } from '../services/pageContext';
 import { handleChat } from '../services/modes/chat';
@@ -151,6 +151,8 @@ async function startAgent(prompt: string) {
     // Pass conversation history to chat/extract modes (they benefit from context)
     const history = [...conversationHistory];
 
+    const model = settings.model || DEFAULT_MODEL;
+
     // Dispatch to appropriate handler
     switch (mode) {
       case 'chat':
@@ -163,6 +165,7 @@ async function startAgent(prompt: string) {
           settings.characteristic,
           history,
           cachedContext,
+          model,
         );
         break;
 
@@ -176,6 +179,7 @@ async function startAgent(prompt: string) {
           abortController.signal,
           settings.characteristic,
           history,
+          model,
         );
         break;
 
@@ -188,6 +192,7 @@ async function startAgent(prompt: string) {
           abortController.signal,
           settings.characteristic,
           sendGlow,
+          model,
         );
         break;
 
