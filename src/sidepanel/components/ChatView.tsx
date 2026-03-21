@@ -2,12 +2,19 @@ import React, { useRef, useEffect } from 'react';
 import { useAgentStore } from '../store/agentStore';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import FormattedOutput from './FormattedOutput';
+import StreamingBubble from './StreamingBubble';
 
 export default function ChatView() {
   const chatMessages = useAgentStore((s) => s.chatMessages);
-  const streamingText = useAgentStore((s) => s.streamingText);
+  const isStreaming = useAgentStore((s) => s.isStreaming);
   const status = useAgentStore((s) => s.status);
-  const scrollRef = useAutoScroll([chatMessages.length, streamingText]);
+  const scrollRef = useAutoScroll([chatMessages.length, isStreaming]);
+
+  const showThinking =
+    status === 'running' &&
+    !isStreaming &&
+    chatMessages.length > 0 &&
+    chatMessages[chatMessages.length - 1].role === 'user';
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
@@ -20,42 +27,21 @@ export default function ChatView() {
         />
       ))}
 
-      {/* Streaming text (not yet committed to messages) */}
-      {streamingText && status === 'running' && (
+      {/* Streaming text — DOM-driven, no React re-renders */}
+      {isStreaming && status === 'running' && <StreamingBubble />}
+
+      {/* Thinking indicator */}
+      {showThinking && (
         <div className="flex justify-start animate-fade-in">
-          <div className="max-w-[85%] rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
-            <div className="text-sm streaming-text">
-              <FormattedOutput content={streamingText} />
+          <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
+            <div className="flex gap-1.5 items-center py-0.5">
+              <span className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot" style={{ animationDelay: '200ms' }} />
+              <span className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot" style={{ animationDelay: '400ms' }} />
             </div>
-            <span className="inline-block w-1.5 h-4 bg-tan-400 rounded-sm ml-0.5 -mb-0.5 animate-cursor-blink" />
           </div>
         </div>
       )}
-
-      {/* Thinking indicator */}
-      {status === 'running' &&
-        !streamingText &&
-        chatMessages.length > 0 &&
-        chatMessages[chatMessages.length - 1].role === 'user' && (
-          <div className="flex justify-start animate-fade-in">
-            <div className="rounded-2xl rounded-bl-md px-3.5 py-2.5 bg-white border border-tan-200">
-              <div className="flex gap-1.5 items-center py-0.5">
-                <span
-                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
-                  style={{ animationDelay: '0ms' }}
-                />
-                <span
-                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
-                  style={{ animationDelay: '200ms' }}
-                />
-                <span
-                  className="w-1.5 h-1.5 bg-tan-400 rounded-full animate-thinking-dot"
-                  style={{ animationDelay: '400ms' }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
     </div>
   );
 }

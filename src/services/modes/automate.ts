@@ -98,7 +98,7 @@ async function detectAndSwitchToNewTab(knownTabIds: Set<number>): Promise<number
   return null;
 }
 
-// If the prompt is asking to go somewhere, Google it first
+// If the prompt is asking to go somewhere, navigate directly or Google it
 async function preNavigate(prompt: string, tabId: number): Promise<boolean> {
   const navMatch = prompt.match(
     /^(?:go to|navigate to|open|open up|visit|take me to|launch|go look at|check|pull up)\s+(.+)$/i,
@@ -106,7 +106,17 @@ async function preNavigate(prompt: string, tabId: number): Promise<boolean> {
   if (!navMatch) return false;
 
   const target = navMatch[1].trim().replace(/[."']$/g, '');
-  const url = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
+
+  // Detect if target looks like a URL (has a dot and no spaces = likely a domain)
+  let url: string;
+  if (/^https?:\/\//i.test(target)) {
+    url = target;
+  } else if (/^[^\s]+\.[a-z]{2,}(\/\S*)?$/i.test(target)) {
+    // Looks like a domain (e.g. "google.com", "github.com/user/repo")
+    url = `https://${target}`;
+  } else {
+    url = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
+  }
 
   await chrome.tabs.update(tabId, { url });
 
@@ -347,13 +357,28 @@ export async function handleAutomate(
         }
       }
 
-      messages.push({ role: 'user', content: toolResults });
+      // Only push tool results if we have any (avoid empty content array which is invalid)
+      if (toolResults.length > 0) {
+        messages.push({ role: 'user', content: toolResults });
+      }
     }
   } finally {
-    // Clean up glow on all tabs we touched
-    const attachedId = debuggerService.getAttachedTabId();
-    if (attachedId) sendGlow(attachedId, false);
-    if (attachedId !== tabId) sendGlow(tabId, false);
+    // Clean up glow on all tabs we touched (before detaching debugger so Runtime.evaluate works)
+    for (const id of knownTabIds) {
+      try {
+        sendGlow(id, false);
+      } catch {
+        // Tab may have been closed
+      }
+    }
+    // Also remove from original tab if not in knownTabIds
+    if (!knownTabIds.has(tabId)) {
+      try {
+        sendGlow(tabId, false);
+      } catch {
+        // Tab may have been closed
+      }
+    }
     await debuggerService.detach();
   }
 }

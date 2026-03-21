@@ -25,7 +25,7 @@ export async function sendMessage(
   const body: Record<string, unknown> = {
     model,
     max_tokens: MAX_TOKENS,
-    system: systemPrompt,
+    system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
     messages: preparedMessages,
   };
 
@@ -53,11 +53,12 @@ export async function streamMessage(
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
+      'anthropic-beta': 'prompt-caching-2024-07-31',
     },
     body: JSON.stringify({
       model,
       max_tokens: MAX_TOKENS,
-      system: systemPrompt,
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages,
       stream: true,
     }),
@@ -65,45 +66,61 @@ export async function streamMessage(
   });
 
   if (!response.ok) {
-    const error: AnthropicError = await response.json();
-    throw new Error(`Anthropic API error: ${error.error?.message || response.statusText}`);
+    let errorMessage = response.statusText;
+    try {
+      const error: AnthropicError = await response.json();
+      errorMessage = error.error?.message || errorMessage;
+    } catch {
+      // Response body wasn't JSON
+    }
+    throw new Error(`Anthropic API error: ${errorMessage}`);
   }
 
-  const reader = response.body!.getReader();
+  if (!response.body) {
+    throw new Error('No response body received from streaming API');
+  }
+
+  // Read the stream as fast as possible — fire deltas inline, no await overhead
+  const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let accumulated = '';
   let buffer = '';
 
-  while (true) {
+  for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const jsonStr = line.slice(6).trim();
-        if (!jsonStr) continue;
+    // Process all complete lines in one pass
+    let start = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      if (buffer[i] !== '\n') continue;
+      const line = buffer.substring(start, i);
+      start = i + 1;
 
-        try {
-          const event: StreamEvent = JSON.parse(jsonStr);
+      // Fast prefix check — skip non-data lines without substring allocation
+      if (line.length < 7 || line.charCodeAt(0) !== 100 /* 'd' */) continue;
+      if (!line.startsWith('data: ')) continue;
 
-          if (event.type === 'content_block_delta') {
-            if ('text' in event.delta) {
-              accumulated += event.delta.text;
-              onDelta(event.delta.text);
-            }
-          } else if (event.type === 'message_stop') {
-            onComplete(accumulated);
-            return;
-          }
-        } catch {
-          // Skip malformed events
+      const jsonStr = line.substring(6);
+      if (jsonStr.length === 0) continue;
+
+      try {
+        const event: StreamEvent = JSON.parse(jsonStr);
+        if (event.type === 'content_block_delta' && 'text' in event.delta) {
+          accumulated += event.delta.text;
+          onDelta(event.delta.text);
+        } else if (event.type === 'message_stop') {
+          onComplete(accumulated);
+          return;
         }
+      } catch {
+        // Skip malformed events
       }
     }
+    // Keep only the incomplete trailing line
+    buffer = start < buffer.length ? buffer.substring(start) : '';
   }
 
   // If we exit the loop without message_stop
@@ -180,7 +197,21 @@ async function fetchWithRetry(
       const retryAfter = response.headers.get('retry-after');
       const baseWait = response.status === 529 ? 5000 : 2000;
       const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : baseWait * Math.pow(2, attempt);
-      await new Promise((r) => setTimeout(r, waitMs));
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(resolve, waitMs);
+        if (signal) {
+          const onAbort = () => {
+            clearTimeout(timer);
+            reject(new DOMException('Aborted', 'AbortError'));
+          };
+          if (signal.aborted) {
+            clearTimeout(timer);
+            reject(new DOMException('Aborted', 'AbortError'));
+            return;
+          }
+          signal.addEventListener('abort', onAbort, { once: true });
+        }
+      });
       continue;
     }
 

@@ -81,6 +81,37 @@ function addToHistory(message: ChatMessage) {
   }
 }
 
+/**
+ * Ensure conversation history has strictly alternating user/assistant roles.
+ * If two consecutive user messages exist (e.g. after automate mode which doesn't
+ * produce assistant messages), insert a placeholder assistant message between them.
+ */
+function sanitizeHistory(history: ChatMessage[]): ChatMessage[] {
+  const sanitized: ChatMessage[] = [];
+  for (let i = 0; i < history.length; i++) {
+    const msg = history[i];
+    const prev = sanitized[sanitized.length - 1];
+    if (prev && prev.role === msg.role) {
+      if (msg.role === 'user') {
+        // Insert a placeholder assistant message to maintain alternation
+        sanitized.push({
+          id: `msg_${Date.now()}_ph_${i}`,
+          role: 'assistant',
+          content: '(Previous task completed)',
+          timestamp: msg.timestamp - 1,
+        });
+      } else {
+        // Two consecutive assistant messages — merge or skip
+        // (shouldn't normally happen, but just keep the latest)
+        sanitized[sanitized.length - 1] = msg;
+        continue;
+      }
+    }
+    sanitized.push(msg);
+  }
+  return sanitized;
+}
+
 async function startAgent(prompt: string) {
   if (agentStatus === 'running') return;
 
@@ -148,10 +179,14 @@ async function startAgent(prompt: string) {
       broadcast(msg);
     };
 
-    // Pass conversation history to chat/extract modes (they benefit from context)
-    const history = [...conversationHistory];
+    // Pass sanitized conversation history to chat/extract modes
+    // Sanitize ensures alternating user/assistant roles (automate mode doesn't add assistant messages)
+    const history = sanitizeHistory([...conversationHistory]);
 
     const model = settings.model || DEFAULT_MODEL;
+
+    // User message is shown instantly by the UI (in useAgentLoop.startAgent)
+    // — no need to broadcast it from any mode handler
 
     // Dispatch to appropriate handler
     switch (mode) {
