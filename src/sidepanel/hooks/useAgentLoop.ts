@@ -6,7 +6,9 @@ export function useAgentLoop() {
 
   const startAgent = useCallback(
     async (prompt: string) => {
-      // Don't clear conversation — just reset streaming state for the new message
+      // Guard against double-submit — check store directly (not React's stale render value)
+      if (useAgentStore.getState().status === 'running') return;
+
       clearStreamText();
       setStatus('running');
 

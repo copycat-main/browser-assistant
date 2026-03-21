@@ -6,6 +6,9 @@ interface ScaleFactors {
   scaleY: number;
 }
 
+// URL pattern for detecting navigation attempts in type() actions
+const URL_PATTERN = /^(https?:\/\/\S+|www\.\S+\.\S+|\S+\.(com|org|net|io|co|dev|ai|app|xyz|me)(\/\S*)?)$/i;
+
 export async function executeAction(
   tabId: number,
   action: ComputerAction,
@@ -30,12 +33,47 @@ export async function executeAction(
     case 'triple_click':
       return await click(tabId, action.coordinate, 'left', 3, scale);
 
-    case 'type':
-      await debugger_.insertText(tabId, action.text);
-      return `Typed: "${action.text.substring(0, 50)}${action.text.length > 50 ? '...' : ''}"`;
+    case 'type': {
+      const text = action.text;
+      // Intercept URL typing — the LLM might be trying to navigate via address bar.
+      // Use chrome.tabs.update instead (the LLM can't see/interact with browser chrome).
+      if (URL_PATTERN.test(text.trim())) {
+        const url = text.trim().startsWith('http') ? text.trim() : `https://${text.trim()}`;
+        await chrome.tabs.update(tabId, { url });
+        // Wait for page load
+        const start = Date.now();
+        while (Date.now() - start < 5000) {
+          try {
+            const tab = await chrome.tabs.get(tabId);
+            if (tab.status === 'complete') break;
+          } catch { break; }
+          await new Promise((r) => setTimeout(r, 300));
+        }
+        return `Navigated to: ${url}`;
+      }
+      await debugger_.insertText(tabId, text);
+      return `Typed: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`;
+    }
 
-    case 'key':
+    case 'key': {
+      // Intercept address bar shortcuts — the LLM can't interact with browser chrome
+      const combo = action.text.toLowerCase().replace(/\s/g, '');
+      if (combo === 'ctrl+l' || combo === 'meta+l' || combo === 'cmd+l' ||
+          combo === 'control+l' || combo === 'command+l') {
+        // Navigate to Google instead — gives the LLM a search box it CAN interact with
+        await chrome.tabs.update(tabId, { url: 'https://www.google.com' });
+        const start = Date.now();
+        while (Date.now() - start < 5000) {
+          try {
+            const tab = await chrome.tabs.get(tabId);
+            if (tab.status === 'complete') break;
+          } catch { break; }
+          await new Promise((r) => setTimeout(r, 300));
+        }
+        return 'Navigated to Google (address bar is not accessible — use Google search instead)';
+      }
       return await pressKey(tabId, action.text);
+    }
 
     case 'scroll':
       return await scroll(tabId, action.coordinate, action.delta_x, action.delta_y, scale);

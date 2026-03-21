@@ -10,7 +10,9 @@ import {
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MAX_TOKENS = 8096;
-const MAX_CACHE_BLOCKS = 4;
+// Anthropic allows max 4 cache_control blocks total.
+// System prompt uses 1, so we reserve 3 for images in messages.
+const MAX_CACHE_BLOCKS = 3;
 
 export async function sendMessage(
   apiKey: string,

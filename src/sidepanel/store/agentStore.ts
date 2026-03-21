@@ -86,9 +86,14 @@ export const useAgentStore = create<AgentState>((set) => ({
   setView: (view) => set({ currentView: view }),
   setTaskMode: (mode) => set({ taskMode: mode }),
   addChatMessage: (message) =>
-    set((state) => ({
-      chatMessages: [...state.chatMessages, message],
-    })),
+    set((state) => {
+      // Deduplicate — skip if the last message has the same role and content
+      const last = state.chatMessages[state.chatMessages.length - 1];
+      if (last && last.role === message.role && last.content === message.content) {
+        return state;
+      }
+      return { chatMessages: [...state.chatMessages, message] };
+    }),
   appendStreamText: (text) => {
     // Delegates to rAF buffer instead of immediate set()
     bufferStreamDelta(text);

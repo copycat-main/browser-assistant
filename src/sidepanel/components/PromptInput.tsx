@@ -35,11 +35,15 @@ export default function PromptInput({ prefillPrompt, onPromptUsed }: Props) {
     el.style.overflowY = natural > MAX_HEIGHT ? 'auto' : 'hidden';
   }, [prompt]);
 
+  const submittingRef = useRef(false);
   const handleSubmit = () => {
     const trimmed = prompt.trim();
-    if (!trimmed || isRunning) return;
+    if (!trimmed || isRunning || submittingRef.current) return;
+    submittingRef.current = true;
     startAgent(trimmed);
     setPrompt('');
+    // Reset after a tick so the guard doesn't permanently block
+    setTimeout(() => { submittingRef.current = false; }, 100);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

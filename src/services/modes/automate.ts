@@ -98,29 +98,64 @@ async function detectAndSwitchToNewTab(knownTabIds: Set<number>): Promise<number
   return null;
 }
 
-// If the prompt is asking to go somewhere, navigate directly or Google it
+// Smart pre-navigation: extract the site/URL from the prompt and navigate there.
+// Handles both pure navigation ("go to x.com") and navigation + task ("go to linkedin and look up someone").
 async function preNavigate(prompt: string, tabId: number): Promise<boolean> {
   const navMatch = prompt.match(
-    /^(?:go to|navigate to|open|open up|visit|take me to|launch|go look at|check|pull up)\s+(.+)$/i,
+    /^(?:go to|navigate to|open|open up|visit|take me to|launch|pull up)\s+(.+)$/i,
   );
   if (!navMatch) return false;
 
-  const target = navMatch[1].trim().replace(/[."']$/g, '');
+  const rest = navMatch[1].trim().replace(/[."']$/g, '');
 
-  // Detect if target looks like a URL (has a dot and no spaces = likely a domain)
-  let url: string;
-  if (/^https?:\/\//i.test(target)) {
-    url = target;
-  } else if (/^[^\s]+\.[a-z]{2,}(\/\S*)?$/i.test(target)) {
-    // Looks like a domain (e.g. "google.com", "github.com/user/repo")
-    url = `https://${target}`;
-  } else {
-    url = `https://www.google.com/search?q=${encodeURIComponent(target)}`;
+  // Try to extract a URL or domain from the beginning of the target text
+  let url: string | null = null;
+
+  // Full URL: "https://linkedin.com/in/someone"
+  const fullUrlMatch = rest.match(/^(https?:\/\/\S+)/i);
+  if (fullUrlMatch) {
+    url = fullUrlMatch[1];
+  }
+
+  // Domain: "x.com", "github.com/user/repo" (first word looks like a domain)
+  if (!url) {
+    const firstWord = rest.split(/\s/)[0];
+    if (/^[^\s]+\.[a-z]{2,}(\/\S*)?$/i.test(firstWord)) {
+      url = `https://${firstWord}`;
+    }
+  }
+
+  // Known site name without TLD: "linkedin", "youtube", "github", "twitter", "reddit"
+  if (!url) {
+    const firstWord = rest.split(/\s/)[0].toLowerCase();
+    const knownSites: Record<string, string> = {
+      linkedin: 'https://www.linkedin.com',
+      youtube: 'https://www.youtube.com',
+      github: 'https://github.com',
+      twitter: 'https://x.com',
+      reddit: 'https://www.reddit.com',
+      google: 'https://www.google.com',
+      facebook: 'https://www.facebook.com',
+      instagram: 'https://www.instagram.com',
+      amazon: 'https://www.amazon.com',
+      wikipedia: 'https://www.wikipedia.org',
+    };
+    if (knownSites[firstWord]) {
+      url = knownSites[firstWord];
+    }
+  }
+
+  // Fallback: unknown site name → Google search for it so the LLM can find and click through
+  if (!url) {
+    const firstWord = rest.split(/[\s,]+/)[0];
+    // Extract the site/app name (stop at conjunctions or task words)
+    const siteNameMatch = rest.match(/^(.+?)(?:\s+(?:and|then|after|to|,)\s+|\s*$)/i);
+    const siteName = siteNameMatch ? siteNameMatch[1].trim() : firstWord;
+    url = `https://www.google.com/search?q=${encodeURIComponent(siteName)}`;
   }
 
   await chrome.tabs.update(tabId, { url });
 
-  // Wait for page to load
   const start = Date.now();
   while (Date.now() - start < 5000) {
     try {
@@ -180,15 +215,6 @@ export async function handleAutomate(
         ],
       },
     ];
-
-    const initialStep: AgentStep = {
-      id: generateStepId(),
-      timestamp: Date.now(),
-      reasoning: 'Starting task...',
-      screenshot: `data:image/png;base64,${initialScreenshot.base64}`,
-      status: 'thinking',
-    };
-    broadcast({ type: 'AGENT_STEP', step: initialStep });
 
     let scale = { scaleX: initialScreenshot.scaleX, scaleY: initialScreenshot.scaleY };
     const MAX_ITERATIONS = 50;
