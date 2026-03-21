@@ -1,6 +1,12 @@
-import { TaskMode, PageContext } from '../types/agent';
-import { ROUTER_MODEL } from '../types/settings';
-import { ROUTER_PROMPT } from './prompts/routerPrompt';
+/**
+ * Fast regex-based intent classifier.
+ * Mirrors the exact patterns from src/services/router.ts
+ *
+ * Priority order: extract > automate > research > chat
+ * Returns null if no pattern matches (would fall through to AI in production)
+ */
+
+import type { TaskMode } from '../types.js';
 
 const EXTRACT_PATTERNS = [
   /^(extract|get|pull|grab|scrape|list|show me|give me)\s+(the |all (the |of the )?|every |each )?(data|info|information|prices?|emails?|names?|links?|text|content|numbers?|details?|items?|products?|table|contacts?|ratings?|reviews?)/i,
@@ -36,8 +42,8 @@ const CHAT_PATTERNS = [
   /^(translate|convert|calculate|compute|proofread|edit|fix|rewrite|paraphrase|simplify|summarize)\s/i,
 ];
 
-export function classifyIntentFast(prompt: string): TaskMode | null {
-  const trimmed = prompt.trim();
+export function classifyFast(input: string): TaskMode | null {
+  const trimmed = input.trim();
 
   for (const pattern of EXTRACT_PATTERNS) {
     if (pattern.test(trimmed)) return 'extract';
@@ -53,53 +59,4 @@ export function classifyIntentFast(prompt: string): TaskMode | null {
   }
 
   return null;
-}
-
-export async function classifyIntentWithAI(
-  apiKey: string,
-  prompt: string,
-  pageContext: PageContext,
-  signal?: AbortSignal,
-): Promise<TaskMode> {
-  const userMessage = `Page: ${pageContext.title} (${pageContext.url})\nUser prompt: "${prompt}"`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: ROUTER_MODEL,
-      max_tokens: 10,
-      system: ROUTER_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-    signal,
-  });
-
-  if (!response.ok) {
-    return 'chat';
-  }
-
-  const data = await response.json();
-  const text = data.content?.[0]?.text?.trim().toLowerCase() || 'chat';
-
-  const validModes: TaskMode[] = ['chat', 'research', 'extract', 'automate'];
-  if (text === 'navigate') return 'automate';
-  return validModes.includes(text as TaskMode) ? (text as TaskMode) : 'chat';
-}
-
-export async function classifyIntent(
-  apiKey: string,
-  prompt: string,
-  pageContext: PageContext,
-  signal?: AbortSignal,
-): Promise<TaskMode> {
-  const fastResult = classifyIntentFast(prompt);
-  if (fastResult) return fastResult;
-
-  return classifyIntentWithAI(apiKey, prompt, pageContext, signal);
 }
