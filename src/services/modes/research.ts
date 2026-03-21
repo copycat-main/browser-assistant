@@ -1,5 +1,5 @@
 import { PageContext, SWToPanelMessage, ResearchProgress } from '../../types/agent';
-import { Characteristic } from '../../types/settings';
+import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
 import { sendMessage, streamMessage } from '../anthropicApi';
 import { RESEARCH_PLAN_PROMPT, buildResearchSynthesisPrompt } from '../prompts/modePrompts';
 
@@ -17,7 +17,7 @@ export async function handleResearch(
   signal?: AbortSignal,
   characteristic?: Characteristic,
   sendGlow?: (tabId: number, show: boolean) => void,
-  model?: string,
+  model: string = DEFAULT_MODEL,
 ): Promise<void> {
   // Get the current active tab — we do all navigation in this single tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -25,15 +25,7 @@ export async function handleResearch(
   const tabId = tab.id;
   const originalUrl = tab.url || pageContext.url;
 
-  broadcast({
-    type: 'CHAT_MESSAGE',
-    message: {
-      id: `msg_${Date.now()}_user`,
-      role: 'user',
-      content: prompt,
-      timestamp: Date.now(),
-    },
-  });
+  // User message is shown instantly by the UI — no need to broadcast it here
 
   const broadcastProgress = (progress: ResearchProgress) => {
     broadcast({ type: 'RESEARCH_PROGRESS', progress });
@@ -64,7 +56,7 @@ export async function handleResearch(
 
     const planResponse = await sendMessage(
       apiKey,
-      model!,
+      model,
       RESEARCH_PLAN_PROMPT,
       planMessages,
       signal,
@@ -175,7 +167,7 @@ export async function handleResearch(
 
     await streamMessage(
       apiKey,
-      model!,
+      model,
       synthesisPrompt,
       synthesisMessages,
       (delta) => {

@@ -22,11 +22,28 @@ export default function PromptInput({ prefillPrompt, onPromptUsed }: Props) {
     }
   }, [prefillPrompt, onPromptUsed]);
 
+  // Auto-resize textarea: grow up to max, then allow internal scroll
+  const MAX_HEIGHT = 120;
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const natural = el.scrollHeight;
+    const clamped = Math.min(natural, MAX_HEIGHT);
+    el.style.height = clamped + 'px';
+    // Only allow scrolling when content exceeds max height
+    el.style.overflowY = natural > MAX_HEIGHT ? 'auto' : 'hidden';
+  }, [prompt]);
+
+  const submittingRef = useRef(false);
   const handleSubmit = () => {
     const trimmed = prompt.trim();
-    if (!trimmed || isRunning) return;
+    if (!trimmed || isRunning || submittingRef.current) return;
+    submittingRef.current = true;
     startAgent(trimmed);
     setPrompt('');
+    // Reset after a tick so the guard doesn't permanently block
+    setTimeout(() => { submittingRef.current = false; }, 100);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -44,12 +61,12 @@ export default function PromptInput({ prefillPrompt, onPromptUsed }: Props) {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isRunning ? 'Working on it...' : 'Ask me anything or tell me what to do...'}
+          placeholder={isRunning ? 'Working on it...' : 'Ask anything or tell me what to do...'}
           disabled={isRunning}
-          rows={2}
-          className="flex-1 resize-none rounded-xl border border-tan-200 bg-white px-3 py-2 text-sm
+          rows={1}
+          className="prompt-input flex-1 resize-none rounded-xl border border-tan-200 bg-white px-3 py-2 text-sm
                      placeholder:text-tan-300 focus:outline-none focus:ring-2 focus:ring-tan-400
-                     disabled:opacity-50 font-karla"
+                     disabled:opacity-50 font-karla leading-relaxed"
         />
         {isRunning ? (
           <button

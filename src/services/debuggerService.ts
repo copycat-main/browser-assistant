@@ -109,6 +109,11 @@ export async function dispatchKeyEvent(
   if (mapped) {
     params.windowsVirtualKeyCode = mapped.windowsVirtualKeyCode;
     params.code = mapped.code;
+  } else if (key.length === 1) {
+    // Regular character key — set text, code, and virtualKeyCode
+    params.text = type === 'keyDown' ? key : undefined;
+    params.code = `Key${key.toUpperCase()}`;
+    params.windowsVirtualKeyCode = key.toUpperCase().charCodeAt(0);
   }
 
   await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchKeyEvent', params);

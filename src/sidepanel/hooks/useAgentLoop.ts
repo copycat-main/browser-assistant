@@ -2,16 +2,27 @@ import { useCallback } from 'react';
 import { useAgentStore } from '../store/agentStore';
 
 export function useAgentLoop() {
-  const { status, steps, setStatus, clearAll, clearStreamText } = useAgentStore();
+  const { status, steps, setStatus, clearAll, clearStreamText, addChatMessage } = useAgentStore();
 
   const startAgent = useCallback(
     async (prompt: string) => {
-      // Don't clear conversation — just reset streaming state for the new message
+      // Guard against double-submit — check store directly (not React's stale render value)
+      if (useAgentStore.getState().status === 'running') return;
+
       clearStreamText();
       setStatus('running');
+
+      // Show the user message IMMEDIATELY — don't wait for the service worker roundtrip
+      addChatMessage({
+        id: `msg_${Date.now()}_user`,
+        role: 'user',
+        content: prompt,
+        timestamp: Date.now(),
+      });
+
       await chrome.runtime.sendMessage({ type: 'START_AGENT', prompt });
     },
-    [clearStreamText, setStatus],
+    [clearStreamText, setStatus, addChatMessage],
   );
 
   const stopAgent = useCallback(async () => {

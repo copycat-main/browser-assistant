@@ -120,9 +120,14 @@ Use a SINGLE action when:
 - You need to verify what happened before continuing
 
 ## Navigation & Page Changes
-- After clicking a link or button that triggers a page load, STOP and wait for the next screenshot before continuing
-- If a page is loading (spinner, skeleton UI, progress bar), use wait(2) before taking the next screenshot
-- If you need to scroll to find an element, use scroll first, then take a screenshot to confirm it's visible before interacting
+- You can ONLY see and interact with web page content. You CANNOT see or interact with browser chrome (address bar, tab bar, back/forward buttons, bookmarks bar).
+- The system automatically navigates to websites when the user says "go to [site]". You will already see the destination page in your first screenshot.
+- To navigate to a URL mid-task: just use type() with the URL (e.g., type("https://linkedin.com")). The system will intercept this and navigate the browser for you.
+- To search for something: use type() with a URL like type("https://www.google.com/search?q=your+query") or navigate to the current page's search functionality.
+- NEVER use keyboard shortcuts like Ctrl+L, Cmd+L, or F6 to try to access the address bar — they won't work. If you try, the system will redirect you to Google.
+- After clicking a link or button that triggers a page load, STOP and wait for the next screenshot before continuing.
+- If a page is loading (spinner, skeleton UI, progress bar), use wait(2) before taking the next screenshot.
+- If you need to scroll to find an element, use scroll first, then take a screenshot to confirm it's visible before interacting.
 
 ## Form Interaction
 - Always click a field BEFORE typing into it — never assume a field is focused

@@ -37,6 +37,14 @@ body {
   background-color: #c4884a;
 }
 
+/* Hide scrollbar on textarea prompt input */
+textarea.prompt-input::-webkit-scrollbar {
+  display: none;
+}
+textarea.prompt-input {
+  scrollbar-width: none;
+}
+
 /* Chat animations */
 @keyframes fade-in {
   from {
@@ -99,12 +107,14 @@ body {
   animation: thinking-dot 1.4s ease-in-out infinite;
 }
 
-/* Streaming text: smooth content appearance */
-.streaming-text p,
-.streaming-text div,
-.streaming-text h2,
-.streaming-text h3,
-.streaming-text h4,
-.streaming-text pre {
-  animation: fade-in 0.15s ease-out;
+/* Streaming cursor — thin blinking bar after the text */
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: #d4a574;
+  border-radius: 1px;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 0.8s ease-in-out infinite;
 }

@@ -44,14 +44,5 @@ export const DEFAULT_SETTINGS: Settings = {
     company: '',
     title: '',
   },
-  templates: {
-    'Job Application': {
-      'LinkedIn URL': '',
-      'Portfolio/Website': '',
-      'Years of Experience': '',
-      'Desired Salary': '',
-      'Work Authorization': '',
-      'Cover Letter': '',
-    },
-  },
+  templates: {},
 };

@@ -56,6 +56,10 @@ export default function App() {
       return <ReasoningChain />;
     }
 
+    // Waiting for TASK_MODE from the service worker — show ChatView for now.
+    // If this turns out to be automate mode, the view will switch to ReasoningChain.
+    // To avoid a flash of duplicate user messages, only show ChatView if we've been
+    // waiting long enough (taskMode is set within ~100ms typically).
     return <ChatView />;
   };
 

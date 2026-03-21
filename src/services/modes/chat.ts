@@ -1,5 +1,5 @@
 import { ChatMessage, PageContext, SWToPanelMessage } from '../../types/agent';
-import { Characteristic } from '../../types/settings';
+import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
 import { AnthropicMessage } from '../../types/anthropic';
 import { streamMessage } from '../anthropicApi';
 import { buildChatPrompt } from '../prompts/modePrompts';
@@ -13,7 +13,7 @@ export async function handleChat(
   characteristic?: Characteristic,
   history?: ChatMessage[],
   cachedContext?: string,
-  model?: string,
+  model: string = DEFAULT_MODEL,
 ): Promise<void> {
   const systemPrompt = buildChatPrompt(pageContext, characteristic, cachedContext);
 
@@ -37,20 +37,11 @@ export async function handleChat(
     content: [{ type: 'text' as const, text: prompt }],
   });
 
-  // Broadcast user message
-  broadcast({
-    type: 'CHAT_MESSAGE',
-    message: {
-      id: `msg_${Date.now()}_user`,
-      role: 'user',
-      content: prompt,
-      timestamp: Date.now(),
-    },
-  });
+  // User message is shown instantly by the UI — no need to broadcast it here
 
   await streamMessage(
     apiKey,
-    model!,
+    model,
     systemPrompt,
     messages,
     (delta) => {

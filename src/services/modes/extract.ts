@@ -1,5 +1,5 @@
 import { ChatMessage, PageContext, SWToPanelMessage } from '../../types/agent';
-import { Characteristic } from '../../types/settings';
+import { Characteristic, DEFAULT_MODEL } from '../../types/settings';
 import { AnthropicMessage } from '../../types/anthropic';
 import { streamMessage } from '../anthropicApi';
 import { buildExtractPrompt } from '../prompts/modePrompts';
@@ -14,11 +14,11 @@ export async function handleExtract(
   signal?: AbortSignal,
   characteristic?: Characteristic,
   history?: ChatMessage[],
-  model?: string,
+  model: string = DEFAULT_MODEL,
 ): Promise<void> {
   const systemPrompt = buildExtractPrompt(pageContext, characteristic);
 
-  // Get page text content
+  // Get page text content — always fresh, pages change constantly
   const pageData = await getPageText(tabId);
   const userContent = `${prompt}\n\n--- Page Content ---\n${pageData.text.substring(0, 30000)}`;
 
@@ -41,20 +41,11 @@ export async function handleExtract(
     content: [{ type: 'text' as const, text: userContent }],
   });
 
-  // Broadcast user message (without the page content noise)
-  broadcast({
-    type: 'CHAT_MESSAGE',
-    message: {
-      id: `msg_${Date.now()}_user`,
-      role: 'user',
-      content: prompt,
-      timestamp: Date.now(),
-    },
-  });
+  // User message is shown instantly by the UI — no need to broadcast it here
 
   await streamMessage(
     apiKey,
-    model!,
+    model,
     systemPrompt,
     messages,
     (delta) => {

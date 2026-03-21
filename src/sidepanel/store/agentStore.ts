@@ -16,6 +16,7 @@ interface AgentState {
   taskMode: TaskMode | null;
   chatMessages: ChatMessage[];
   streamingText: string;
+  isStreaming: boolean;
   pageContext: PageContext | null;
   researchProgress: ResearchProgress | null;
 
@@ -33,6 +34,29 @@ interface AgentState {
   setResearchProgress: (progress: ResearchProgress | null) => void;
 }
 
+// --- rAF-batched streaming buffer ---
+let streamBuffer = '';
+let rafId: number | null = null;
+
+function flushStreamBuffer() {
+  rafId = null;
+  if (!streamBuffer) return;
+  const chunk = streamBuffer;
+  streamBuffer = '';
+  useAgentStore.setState((state) => ({
+    streamingText: state.streamingText + chunk,
+    isStreaming: true,
+  }));
+}
+
+function bufferStreamDelta(text: string) {
+  streamBuffer += text;
+  if (rafId === null) {
+    rafId = requestAnimationFrame(flushStreamBuffer);
+  }
+}
+// ---
+
 export const useAgentStore = create<AgentState>((set) => ({
   status: 'idle',
   steps: [],
@@ -40,6 +64,7 @@ export const useAgentStore = create<AgentState>((set) => ({
   taskMode: null,
   chatMessages: [],
   streamingText: '',
+  isStreaming: false,
   pageContext: null,
   researchProgress: null,
 
@@ -54,20 +79,34 @@ export const useAgentStore = create<AgentState>((set) => ({
       steps: [],
       chatMessages: [],
       streamingText: '',
+      isStreaming: false,
       taskMode: null,
       researchProgress: null,
     }),
   setView: (view) => set({ currentView: view }),
   setTaskMode: (mode) => set({ taskMode: mode }),
   addChatMessage: (message) =>
-    set((state) => ({
-      chatMessages: [...state.chatMessages, message],
-    })),
-  appendStreamText: (text) =>
-    set((state) => ({
-      streamingText: state.streamingText + text,
-    })),
-  clearStreamText: () => set({ streamingText: '' }),
+    set((state) => {
+      // Deduplicate — skip if the last message has the same role and content
+      const last = state.chatMessages[state.chatMessages.length - 1];
+      if (last && last.role === message.role && last.content === message.content) {
+        return state;
+      }
+      return { chatMessages: [...state.chatMessages, message] };
+    }),
+  appendStreamText: (text) => {
+    // Delegates to rAF buffer instead of immediate set()
+    bufferStreamDelta(text);
+  },
+  clearStreamText: () => {
+    // Cancel any pending buffer flush
+    streamBuffer = '';
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    set({ streamingText: '', isStreaming: false });
+  },
   setPageContext: (context) => set({ pageContext: context }),
   setResearchProgress: (progress) => set({ researchProgress: progress }),
 }));
@@ -116,7 +155,8 @@ chrome.runtime.onMessage.addListener((message: SWToPanelMessage) => {
       store.appendStreamText(message.text);
       break;
     case 'STREAM_DONE':
-      // Stream is done, keep the text for final render
+      // Clear streaming text immediately — the final content will arrive as a CHAT_MESSAGE
+      store.clearStreamText();
       break;
     case 'CHAT_MESSAGE':
       store.addChatMessage(message.message);
